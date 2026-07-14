@@ -1,0 +1,21 @@
+# User-requested excludes
+utils/
+build/
+ui/
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+.terraform.lock.hcl
+
+# Node
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+
+# macOS
+.DS_Store
