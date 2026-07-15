@@ -1,7 +1,7 @@
 # User-requested excludes
-utils/
-build/
-ui/
+/utils
+/build
+/ui
 
 # Terraform
 .terraform/
