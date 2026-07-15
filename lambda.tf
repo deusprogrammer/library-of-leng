@@ -171,3 +171,65 @@ module "get_inventory" {
     }
   }
 }
+
+module "get_cart" {
+  source = "./modules/http-lambda"
+
+  api_id            = aws_apigatewayv2_api.library_of_leng.id
+  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
+
+  function_name = "get_cart"
+  route_key     = "GET /shops/{identifier}/carts/{cartSlug}"
+
+  filename         = data.archive_file.lambda_archive.output_path
+  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
+  handler          = "index.getCart"
+
+  dynamodb_tables = {
+    CARTS_TABLE = {
+      name = aws_dynamodb_table.carts.name
+      arn  = aws_dynamodb_table.carts.arn
+      actions = [
+        "dynamodb:Query"
+      ]
+    }
+    SHOPS_TABLE = {
+      name = aws_dynamodb_table.shops.name
+      arn  = aws_dynamodb_table.shops.arn
+      actions = [
+        "dynamodb:Query"
+      ]
+    }
+  }
+}
+
+module "add_to_cart" {
+  source = "./modules/http-lambda"
+
+  api_id            = aws_apigatewayv2_api.library_of_leng.id
+  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
+
+  function_name = "add_to_cart"
+  route_key     = "POST /shops/{identifier}/carts/{cartSlug}/items"
+
+  filename         = data.archive_file.lambda_archive.output_path
+  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
+  handler          = "index.addToCart"
+
+  dynamodb_tables = {
+    CARTS_TABLE = {
+      name = aws_dynamodb_table.carts.name
+      arn  = aws_dynamodb_table.carts.arn
+      actions = [
+        "dynamodb:Query"
+      ]
+    }
+    SHOPS_TABLE = {
+      name = aws_dynamodb_table.shops.name
+      arn  = aws_dynamodb_table.shops.arn
+      actions = [
+        "dynamodb:Query"
+      ]
+    }
+  }
+}

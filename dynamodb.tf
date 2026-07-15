@@ -24,6 +24,48 @@ resource "aws_dynamodb_table" "shops" {
   }
 }
 
+resource "aws_dynamodb_table" "carts" {
+  name         = "carts"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "cartId"
+  range_key    = "itemKey"
+
+  attribute {
+    name = "cartId"
+    type = "S"
+  }
+
+  attribute {
+    name = "itemKey"
+    type = "S"
+  }
+
+  attribute {
+    name = "shopId"
+    type = "S"
+  }
+
+  attribute {
+    name = "slug"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "cart-by-shop-and-slug"
+    projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "shopId"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "slug"
+      key_type       = "RANGE"
+    }
+  }
+}
+
 resource "aws_dynamodb_table" "inventory" {
   name         = "inventory"
   billing_mode = "PAY_PER_REQUEST"

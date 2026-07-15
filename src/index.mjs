@@ -4,6 +4,7 @@ import { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand, ScanComma
 const client = new DynamoDBClient({});
 const shopTableName = process.env.SHOPS_TABLE;
 const inventoryTableName = process.env.INVENTORY_TABLE;
+const cartTableName = process.env.CART_TABLE;
 const documentClient = DynamoDBDocumentClient.from(client);
 const UUID_REGEX =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -116,14 +117,15 @@ const expandItems = async (items) => {
     };
 
     const cards = (result.data ?? []).map(
-        ({ id, name, set, rarity, type_line, colors }) => ({
+        ({ id, name, set, rarity, type_line, colors, image_uris, card_faces }) => ({
             scryfallId: id,
             name,
             normalizedName: normalizeName(name),
             setCode: set,
             rarity,
             browseCategory: extractBrowseCategory(type_line),
-            colorCategory: extractColorCategory(colors)
+            colorCategory: extractColorCategory(colors),
+            thumbnailUrl: image_uris?.small ?? card_faces?.[0]?.image_uris?.small ?? null
         })
     );
 
@@ -135,7 +137,7 @@ const expandItems = async (items) => {
 
 const upsertInventory = async (inventoryItem) => {
     const { shopId, inventoryId, scryfallId, finish, name, quantity,
-            normalizedName, setCode, rarity, browseCategory, colorCategory } = inventoryItem;
+            normalizedName, setCode, rarity, browseCategory, colorCategory, thumbnailUrl } = inventoryItem;
 
     const response = await documentClient.send(
         new UpdateCommand({
@@ -156,6 +158,7 @@ const upsertInventory = async (inventoryItem) => {
                     rarity = if_not_exists(rarity, :rarity),
                     browseCategory = if_not_exists(browseCategory, :browseCategory),
                     colorCategory = if_not_exists(colorCategory, :colorCategory),
+                    thumbnailUrl = if_not_exists(thumbnailUrl, :thumbnailUrl),
                     #quantity = if_not_exists(#quantity, :zero) + :increment
             `,
 
@@ -174,6 +177,7 @@ const upsertInventory = async (inventoryItem) => {
                 ":rarity": rarity,
                 ":browseCategory": browseCategory,
                 ":colorCategory": colorCategory,
+                ":thumbnailUrl": thumbnailUrl ?? null,
                 ":zero": 0,
                 ":increment": quantity ?? 1
             },
@@ -183,6 +187,40 @@ const upsertInventory = async (inventoryItem) => {
     );
 
     return response.Attributes;
+}
+
+const getCartById = async (cartId) => {
+    let response = await documentClient.send(new QueryCommand({
+        TableName: cartTableName,
+        KeyConditionExpression: "cartId=:cartId",
+        ExpressionAttributeValues: {
+            ":cartId": cartId
+        }
+    }));
+
+    return response?.Items;
+}
+
+const getCartMetaBySlug = async (shopId, slug) => {
+    let response = await documentClient.send(new QueryCommand({
+        TableName: cartTableName,
+        IndexName: "cart-by-shop-and-slug",
+        KeyConditionExpression: "shopId=:shopId AND slug=:slug",
+        ExpressionAttributeValues: {
+            ":shopId": shopId,
+            ":slug": slug
+        }
+    }))
+
+    const items = response.Items ?? [];
+
+    if (items.length > 1) {
+        throw new Error(
+            "There should only be one META entry for a shop and cart slug"
+        );
+    }
+
+    return items[0];
 }
 
 const getShopId = async (identifier) => {
@@ -437,3 +475,168 @@ export const getInventory = async (event, context) => {
 
     return jsonResponse(200, inventory);
 }
+
+export const getCart = async (event) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const slug = event.pathParameters?.slug;
+
+        const shopId = await getShopId(identifier);
+
+        if (!shopId) {
+            return jsonResponse(404, {
+                message: "Shop not found."
+            });
+        }
+
+        const cartData = await getCartMetaBySlug(shopId, slug);
+
+        if (!cartData) {
+            return jsonResponse(404, {
+                message: "Cart not found."
+            });
+        }
+
+        const cartEntries = await getCartById(cartData.cartId);
+
+        return jsonResponse(200, {
+            ...cartData,
+            items: cartEntries.filter(
+                (item) => item.itemKey !== "META"
+            )
+        });
+    } catch (error) {
+        console.error(error);
+
+        return jsonResponse(500, {
+            message: "An unexpected error occurred."
+        });
+    }
+};
+
+export const addToCart = async (event) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const cartSlug = event.pathParameters?.slug;
+
+        if (!identifier || !cartSlug) {
+            return jsonResponse(400, {
+                message: "Shop identifier and cart slug are required."
+            });
+        }
+
+        let requestBody;
+
+        try {
+            requestBody = JSON.parse(event.body ?? "{}");
+        } catch (error) {
+            return jsonResponse(
+                400,
+                { message: "Request body must contain valid JSON." },
+                error
+            );
+        }
+
+        const {
+            inventoryId,
+            quantity = 1
+        } = requestBody;
+
+        if (!inventoryId) {
+            return jsonResponse(400, {
+                message: "inventoryId is required."
+            });
+        }
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            return jsonResponse(400, {
+                message: "quantity must be a positive integer."
+            });
+        }
+
+        const shopId = await getShopId(identifier);
+
+        if (!shopId) {
+            return jsonResponse(404, {
+                message: "Shop not found."
+            });
+        }
+
+        const cartMeta = await getCartMetaBySlug(shopId, cartSlug);
+
+        if (!cartMeta) {
+            return jsonResponse(404, {
+                message: "Cart not found."
+            });
+        }
+
+        const inventoryResult = await documentClient.send(
+            new GetCommand({
+                TableName: inventoryTableName,
+                Key: {
+                    shopId,
+                    inventoryId
+                }
+            })
+        );
+
+        const inventoryItem = inventoryResult.Item;
+
+        if (!inventoryItem) {
+            return jsonResponse(404, {
+                message: "Inventory item not found."
+            });
+        }
+
+        const result = await documentClient.send(
+            new UpdateCommand({
+                TableName: cartTableName,
+
+                Key: {
+                    cartId: cartMeta.cartId,
+                    itemKey: `ITEM#${inventoryId}`
+                },
+
+                UpdateExpression: `
+                    SET
+                        inventoryId = :inventoryId,
+                        shopId = :shopId,
+                        scryfallId = :scryfallId,
+                        #name = :name,
+                        setCode = :setCode,
+                        finish = :finish,
+                        thumbnailUrl = :thumbnailUrl,
+                        #location = :location
+                    ADD quantity :quantity
+                `,
+
+                ExpressionAttributeNames: {
+                    "#name": "name",
+                    "#location": "location"
+                },
+
+                ExpressionAttributeValues: {
+                    ":inventoryId": inventoryId,
+                    ":shopId": shopId,
+                    ":scryfallId": inventoryItem.scryfallId,
+                    ":name": inventoryItem.name,
+                    ":setCode": inventoryItem.setCode,
+                    ":finish": inventoryItem.finish,
+                    ":thumbnailUrl": inventoryItem.thumbnailUrl ?? null,
+                    ":location": inventoryItem.location ?? null,
+                    ":quantity": quantity
+                },
+
+                ReturnValues: "ALL_NEW"
+            })
+        );
+
+        return jsonResponse(200, result.Attributes);
+    } catch (error) {
+        return jsonResponse(
+            500,
+            { message: "Failed to add inventory item to cart." },
+            error
+        );
+    }
+};
