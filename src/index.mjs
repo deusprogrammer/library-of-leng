@@ -4,7 +4,7 @@ import { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand, ScanComma
 const client = new DynamoDBClient({});
 const shopTableName = process.env.SHOPS_TABLE;
 const inventoryTableName = process.env.INVENTORY_TABLE;
-const cartTableName = process.env.CART_TABLE;
+const cartTableName = process.env.CARTS_TABLE;
 const documentClient = DynamoDBDocumentClient.from(client);
 const UUID_REGEX =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -517,7 +517,7 @@ export const getCart = async (event) => {
 export const addToCart = async (event) => {
     try {
         const identifier = event.pathParameters?.identifier;
-        const cartSlug = event.pathParameters?.slug;
+        const cartSlug = event.pathParameters?.cartSlug;
 
         if (!identifier || !cartSlug) {
             return jsonResponse(400, {
