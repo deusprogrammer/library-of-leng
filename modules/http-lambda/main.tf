@@ -49,24 +49,24 @@ resource "aws_iam_role_policy_attachment" "dynamodb_access" {
 }
 
 resource "aws_lambda_function" "this" {
-    function_name = var.function_name
-    source_code_hash = var.source_code_hash
-    filename = var.filename
-    role = aws_iam_role.this.arn
-    handler = var.handler
-    runtime = var.runtime
-    timeout = 29
+  function_name    = var.function_name
+  source_code_hash = var.source_code_hash
+  filename         = var.filename
+  role             = aws_iam_role.this.arn
+  handler          = var.handler
+  runtime          = var.runtime
+  timeout          = 29
 
-    environment {
-      variables = {
-        for key, table in var.dynamodb_tables:
-          key => table.name
-      }
+  environment {
+    variables = {
+      for key, table in var.dynamodb_tables :
+      key => table.name
     }
+  }
 }
 
 resource "aws_lambda_permission" "this" {
-  statement_id = "Allow${local.pascal_name}ApiInvoke"
+  statement_id  = "Allow${local.pascal_name}ApiInvoke"
   function_name = var.function_name
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"
@@ -89,6 +89,6 @@ resource "aws_apigatewayv2_route" "this" {
 }
 
 resource "aws_iam_policy" "this" {
-  name = "${var.function_name}-dynamodb-access"
+  name   = "${var.function_name}-dynamodb-access"
   policy = data.aws_iam_policy_document.this.json
 }

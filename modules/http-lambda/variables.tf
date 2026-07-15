@@ -1,40 +1,40 @@
 variable "function_name" {
-    type = string
+  type = string
 }
 
 variable "handler" {
-    type = string
+  type = string
 }
 
 variable "runtime" {
-    type = string
-    default = "nodejs22.x"
+  type    = string
+  default = "nodejs22.x"
 }
 
 variable "route_key" {
-    type = string
+  type = string
 }
 
 variable "api_id" {
-    type = string
+  type = string
 }
 
 variable "api_execution_arn" {
-    type = string
+  type = string
 }
 
 variable "filename" {
-    type = string
+  type = string
 }
 
 variable "source_code_hash" {
-    type = string
+  type = string
 }
 
 variable "dynamodb_tables" {
-    type    = map(object({
-        name = string
-        arn = string
-        actions = list(string)
-    }))
+  type = map(object({
+    name    = string
+    arn     = string
+    actions = list(string)
+  }))
 }

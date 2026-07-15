@@ -1,235 +1,234 @@
+locals {
+  api_id            = aws_apigatewayv2_api.library_of_leng.id
+  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
+  filename          = data.archive_file.lambda_archive.output_path
+  source_code_hash  = data.archive_file.lambda_archive.output_base64sha256
+
+  endpoints = {
+    create_shop = {
+      handler   = "index.createShop"
+      route_key = "POST /shops"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:PutItem"
+          ]
+        }
+      }
+    }
+
+    get_shop = {
+      handler   = "index.getShop"
+      route_key = "GET /shops/{identifier}"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
+    get_shops = {
+      handler   = "index.getShops"
+      route_key = "GET /shops"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:Scan"
+          ]
+        }
+      }
+    }
+
+    add_inventory = {
+      handler   = "index.addInventory"
+      route_key = "POST /shops/{identifier}/inventory"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem"
+          ]
+        }
+      }
+    }
+
+    add_batch_inventory = {
+      handler   = "index.addBatchInventory"
+      route_key = "POST /shops/{identifier}/inventory/batch"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:PutItem",
+            "dynamodb:UpdateItem"
+          ]
+        }
+      }
+    }
+
+    get_inventory = {
+      handler   = "index.getInventory"
+      route_key = "GET /shops/{identifier}/inventory"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
+    get_cart = {
+      handler   = "index.getCart"
+      route_key = "GET /shops/{identifier}/carts/{cartSlug}"
+
+      dynamodb_tables = {
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query"
+          ]
+        }
+
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
+    add_to_cart = {
+      handler   = "index.addToCart"
+      route_key = "POST /shops/{identifier}/carts/{cartSlug}/items"
+
+      dynamodb_tables = {
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query",
+            "dynamodb:UpdateItem"
+          ]
+        }
+
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+      }
+    }
+
+    create_cart = {
+      handler   = "index.createCart"
+      route_key = "POST /shops/{identifier}/carts"
+
+      dynamodb_tables = {
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query",
+            "dynamodb:PutItem"
+          ]
+        }
+
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+  }
+}
+
 data "archive_file" "lambda_archive" {
   type        = "zip"
   source_dir  = "src"
   output_path = "build/lambda.zip"
 }
 
-module "create_shop" {
+module "lambdas" {
   source = "./modules/http-lambda"
 
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
+  for_each = local.endpoints
 
-  function_name = "create_shop"
-  route_key     = "POST /shops"
+  api_id            = local.api_id
+  api_execution_arn = local.api_execution_arn
 
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.createShop"
+  filename         = local.filename
+  source_code_hash = local.source_code_hash
 
-  dynamodb_tables = {
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:PutItem"
-      ]
-    }
-  }
-}
+  function_name = each.key
+  handler       = each.value.handler
+  route_key     = each.value.route_key
 
-module "get_shop" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "get_shop"
-  route_key     = "GET /shops/{identifier}"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.getShop"
-
-  dynamodb_tables = {
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:GetItem",
-        "dynamodb:Query"
-      ]
-    }
-  }
-}
-
-module "get_shops" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "get_shops"
-  route_key     = "GET /shops"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.getShops"
-
-  dynamodb_tables = {
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:Scan"
-      ]
-    }
-  }
-}
-
-module "add_inventory" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "add_inventory"
-  route_key     = "POST /shops/{identifier}/inventory"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.addInventory"
-
-  dynamodb_tables = {
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-    INVENTORY_TABLE = {
-      name = aws_dynamodb_table.inventory.name
-      arn  = aws_dynamodb_table.inventory.arn
-      actions = [
-        "dynamodb:PutItem",
-        "dynamodb:UpdateItem"
-      ]
-    }
-  }
-}
-
-module "add_batch_inventory" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "add_batch_inventory"
-  route_key     = "POST /shops/{identifier}/inventory/batch"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.addBatchInventory"
-
-  dynamodb_tables = {
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-    INVENTORY_TABLE = {
-      name = aws_dynamodb_table.inventory.name
-      arn  = aws_dynamodb_table.inventory.arn
-      actions = [
-        "dynamodb:PutItem",
-        "dynamodb:UpdateItem"
-      ]
-    }
-  }
-}
-
-module "get_inventory" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "get_inventory"
-  route_key     = "GET /shops/{identifier}/inventory"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.getInventory"
-
-  dynamodb_tables = {
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-    INVENTORY_TABLE = {
-      name = aws_dynamodb_table.inventory.name
-      arn  = aws_dynamodb_table.inventory.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-  }
-}
-
-module "get_cart" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "get_cart"
-  route_key     = "GET /shops/{identifier}/carts/{cartSlug}"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.getCart"
-
-  dynamodb_tables = {
-    CARTS_TABLE = {
-      name = aws_dynamodb_table.carts.name
-      arn  = aws_dynamodb_table.carts.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-  }
-}
-
-module "add_to_cart" {
-  source = "./modules/http-lambda"
-
-  api_id            = aws_apigatewayv2_api.library_of_leng.id
-  api_execution_arn = aws_apigatewayv2_api.library_of_leng.execution_arn
-
-  function_name = "add_to_cart"
-  route_key     = "POST /shops/{identifier}/carts/{cartSlug}/items"
-
-  filename         = data.archive_file.lambda_archive.output_path
-  source_code_hash = data.archive_file.lambda_archive.output_base64sha256
-  handler          = "index.addToCart"
-
-  dynamodb_tables = {
-    CARTS_TABLE = {
-      name = aws_dynamodb_table.carts.name
-      arn  = aws_dynamodb_table.carts.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-    SHOPS_TABLE = {
-      name = aws_dynamodb_table.shops.name
-      arn  = aws_dynamodb_table.shops.arn
-      actions = [
-        "dynamodb:Query"
-      ]
-    }
-  }
+  dynamodb_tables = each.value.dynamodb_tables
 }

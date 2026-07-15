@@ -588,50 +588,88 @@ export const addToCart = async (event) => {
             });
         }
 
-        const result = await documentClient.send(
-            new UpdateCommand({
-                TableName: cartTableName,
+        if (quantity > inventoryItem.quantity) {
+            return jsonResponse(409, {
+                message:
+                    `Only ${inventoryItem.quantity} of this item ` +
+                    `are currently available.`
+            });
+        }
 
-                Key: {
-                    cartId: cartMeta.cartId,
-                    itemKey: `ITEM#${inventoryId}`
-                },
+        const maximumExistingQuantity =
+            inventoryItem.quantity - quantity;
 
-                UpdateExpression: `
-                    SET
-                        inventoryId = :inventoryId,
-                        shopId = :shopId,
-                        scryfallId = :scryfallId,
-                        #name = :name,
-                        setCode = :setCode,
-                        finish = :finish,
-                        thumbnailUrl = :thumbnailUrl,
-                        #location = :location
-                    ADD quantity :quantity
-                `,
+        let result;
 
-                ExpressionAttributeNames: {
-                    "#name": "name",
-                    "#location": "location"
-                },
+        try {
+            result = await documentClient.send(
+                new UpdateCommand({
+                    TableName: cartTableName,
 
-                ExpressionAttributeValues: {
-                    ":inventoryId": inventoryId,
-                    ":shopId": shopId,
-                    ":scryfallId": inventoryItem.scryfallId,
-                    ":name": inventoryItem.name,
-                    ":setCode": inventoryItem.setCode,
-                    ":finish": inventoryItem.finish,
-                    ":thumbnailUrl": inventoryItem.thumbnailUrl ?? null,
-                    ":location": inventoryItem.location ?? null,
-                    ":quantity": quantity
-                },
+                    Key: {
+                        cartId: cartMeta.cartId,
+                        itemKey: `ITEM#${inventoryId}`
+                    },
 
-                ReturnValues: "ALL_NEW"
-            })
-        );
+                    UpdateExpression: `
+                        SET
+                            inventoryId = :inventoryId,
+                            shopId = :shopId,
+                            scryfallId = :scryfallId,
+                            #name = :name,
+                            setCode = :setCode,
+                            finish = :finish,
+                            thumbnailUrl = :thumbnailUrl,
+                            #location = :location
+                        ADD quantity :quantity
+                    `,
 
-        return jsonResponse(200, result.Attributes);
+                    ConditionExpression: `
+                        attribute_not_exists(quantity)
+                        OR quantity <= :maximumExistingQuantity
+                    `,
+
+                    ExpressionAttributeNames: {
+                        "#name": "name",
+                        "#location": "location"
+                    },
+
+                    ExpressionAttributeValues: {
+                        ":inventoryId": inventoryId,
+                        ":shopId": shopId,
+                        ":scryfallId": inventoryItem.scryfallId,
+                        ":name": inventoryItem.name,
+                        ":setCode": inventoryItem.setCode,
+                        ":finish": inventoryItem.finish,
+                        ":thumbnailUrl":
+                            inventoryItem.thumbnailUrl ?? null,
+                        ":location":
+                            inventoryItem.location ?? null,
+                        ":quantity": quantity,
+                        ":maximumExistingQuantity":
+                            maximumExistingQuantity
+                    },
+
+                    ReturnValues: "ALL_NEW"
+                })
+            );
+        } catch (error) {
+            if (error.name === "ConditionalCheckFailedException") {
+                return jsonResponse(409, {
+                    message:
+                        "Adding that quantity would exceed the " +
+                        "available inventory."
+                });
+            }
+
+            throw error;
+        }
+
+        return jsonResponse(200, {
+            cartId: cartMeta.cartId,
+            slug: cartMeta.slug,
+            item: result.Attributes
+        });
     } catch (error) {
         return jsonResponse(
             500,
@@ -640,3 +678,11 @@ export const addToCart = async (event) => {
         );
     }
 };
+
+export const createCart = async (event) => {
+    // Check if a cart exists with the same origin ip and return the existing one if found
+    // Otherwise create cart
+    // Generate token and slug, and store it in META
+    // Return created cart
+    return jsonResponse(201, {});
+}
