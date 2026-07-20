@@ -125,6 +125,30 @@ locals {
       }
     }
 
+    get_inventory_item = {
+      handler   = "index.getInventoryItem"
+      route_key = "GET /shops/{identifier}/inventory/{inventoryId}"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:GetItem",
+          ]
+        }
+      }
+    }
+
     get_cart = {
       handler   = "index.getCart"
       route_key = "GET /shops/{identifier}/carts/{cartSlug}"
@@ -209,10 +233,10 @@ locals {
   }
 }
 
-data "archive_file" "lambda_archive" {
-  type        = "zip"
-  source_dir  = "src"
-  output_path = "build/lambda.zip"
+data "archive_file" "lambda_archive" { 
+    type = "zip" 
+    source_dir = "${path.module}/../src/lambdas" 
+    output_path = "${path.module}/../build/lambda.zip" 
 }
 
 module "lambdas" {

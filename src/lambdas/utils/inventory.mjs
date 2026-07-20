@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
 const inventoryTableName = process.env.INVENTORY_TABLE;
 const client = new DynamoDBClient({});
@@ -70,3 +70,17 @@ export const upsertInventory = async (inventoryItem) => {
 
     return response.Attributes;
 }
+
+export const getInventoryEntry = async (shopId, inventoryId) => {
+    const response = await documentClient.send(
+        new GetCommand({
+            TableName: inventoryTableName,
+            Key: {
+                shopId,
+                inventoryId
+            }
+        })
+    );
+
+    return response.Item;
+};

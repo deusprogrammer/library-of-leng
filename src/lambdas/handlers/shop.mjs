@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { jsonResponse } from "../utils/util.mjs";
-import { slugify } from "../utils/shop.mjs";
+import { isUUID, slugify } from "../utils/shop.mjs";
 
 const shopTableName = process.env.SHOPS_TABLE;
 const client = new DynamoDBClient({});
@@ -59,7 +59,7 @@ export const getShop = async (event, context) => {
     let shop;
 
     try {
-        if (UUID_REGEX.test(identifier)) {
+        if (isUUID(identifier)) {
             shop = (await documentClient.send(new GetCommand({
                 TableName: shopTableName,
                 Key: {

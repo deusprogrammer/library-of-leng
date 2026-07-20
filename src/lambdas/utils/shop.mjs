@@ -23,6 +23,10 @@ export const slugify = (name) => {
         .replace(/-+/g, "-");              // Collapse duplicate hyphens
 }
 
+export const isUUID = (identifier) => {
+    return UUID_REGEX.test(identifier);
+}
+
 export const getShopId = async (identifier) => {
     try {
         if (UUID_REGEX.test(identifier)) {

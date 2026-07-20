@@ -77,6 +77,36 @@ export function generateCartSlug() {
   return `${randomItem(ADJECTIVES_1)}-${randomItem(ADJECTIVES_2)}-${randomItem(NOUNS)}`;
 }
 
+export const getCartById = async (cartId) => {
+    if (!cartId) {
+        throw new Error("getCartById requires cartId");
+    }
+
+    const response = await documentClient.send(
+        new QueryCommand({
+            TableName: cartTableName,
+            KeyConditionExpression: "cartId = :cartId",
+            ExpressionAttributeValues: {
+                ":cartId": cartId
+            }
+        })
+    );
+
+    const records = response.Items ?? [];
+
+    const meta = records.find(record => record.itemKey === "META");
+    const items = records.filter(record => record.itemKey !== "META");
+
+    if (!meta) {
+        return undefined;
+    }
+
+    return {
+        ...meta,
+        items
+    };
+};
+
 export const getCartMetaBySlug = async (shopId, slug) => {
     let response = await documentClient.send(new QueryCommand({
         TableName: cartTableName,

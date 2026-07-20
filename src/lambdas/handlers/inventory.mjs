@@ -2,7 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { getShopId } from "../utils/shop.mjs";
 import { jsonResponse } from "../utils/util.mjs";
-import { createInventoryId, upsertInventory } from "../utils/inventory.mjs";
+import { createInventoryId, getInventoryEntry, upsertInventory } from "../utils/inventory.mjs";
 import { expandItems } from "../utils/scryfall.mjs";
 
 const inventoryTableName = process.env.INVENTORY_TABLE;
@@ -158,3 +158,19 @@ export const getInventory = async (event, context) => {
 
     return jsonResponse(200, inventory);
 }
+
+export const getInventoryItem = async (event) => {
+    const { identifier, inventoryId } = event.pathParameters;
+
+    const shopId = await getShopId(identifier);
+
+    const inventoryEntry = await getInventoryEntry(shopId, inventoryId);
+
+    if (!inventoryEntry) {
+        return jsonResponse(404, {
+            message: `Inventory entry id=${inventoryId} shopId=${shopId} shopIdentifier=${identifier} not found.`
+        });
+    }
+
+    return jsonResponse(200, inventoryEntry);
+};

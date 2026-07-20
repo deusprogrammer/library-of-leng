@@ -1,0 +1,243 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: system-ui, sans-serif;
+  padding: 2rem;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ── Status ───────────────────────────────────────────── */
+
+.status {
+  text-align: center;
+  margin-top: 4rem;
+  font-size: 1.2rem;
+  color: #888;
+}
+
+.status.error { color: #e05555; }
+
+/* ── Page ─────────────────────────────────────────────── */
+
+.page h1 {
+  font-size: 2rem;
+  text-transform: capitalize;
+  margin-bottom: 0.5rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.back-link:hover { color: #e0e0e0; }
+
+.count {
+  color: #888;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Name search form ─────────────────────────────────── */
+
+.search-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.search-form input {
+  flex: 1;
+  padding: 0.6rem 0.9rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.search-form input:focus {
+  outline: none;
+  border-color: #e2b96f;
+}
+
+.search-form button {
+  padding: 0.6rem 1.2rem;
+  background: #e2b96f;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.search-form button:hover { background: #f0ce8a; }
+
+/* ── Filter tiles (DrillDown) ─────────────────────────── */
+
+.filter-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.filter-tile {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.filter-tile:hover {
+  background: #0f3460;
+  border-color: #e2b96f;
+}
+
+/* ── Set filter input (FilterOptions) ────────────────── */
+
+.set-search {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1.5rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.set-search:focus {
+  outline: none;
+  border-color: #e2b96f;
+}
+
+/* ── Option tiles (FilterOptions) ────────────────────── */
+
+.option-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem;
+}
+
+.option-tile {
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.option-tile:hover {
+  background: #0f3460;
+  border-color: #e2b96f;
+}
+
+.set-code {
+  font-size: 0.75rem;
+  color: #888;
+  font-family: monospace;
+}
+
+/* ── Loading interstitial ─────────────────────────────── */
+
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 2rem;
+}
+
+.loading-text {
+  font-size: 1.2rem;
+  color: #888;
+}
+
+.loading-card-wrap {
+  perspective: 400px;
+  width: 146px;
+  height: 204px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes spin-card {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+
+.loading-card {
+  width: 146px;
+  border-radius: 8px;
+  animation: spin-card 3s linear infinite;
+  transition: opacity 0.25s ease;
+}
+
+.loading-card.fade-out {
+  opacity: 0;
+}
+
+/* ── Card grid ────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 100px);
+  gap: 0.75rem;
+}
+
+.card-tile {
+  background: #16213e;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-tile img { width: 100%; display: block; }
+
+.card-placeholder {
+  width: 100%;
+  aspect-ratio: 146 / 204;
+  background: #0f3460;
+}
+
+.card-info {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.card-name { font-size: 0.8rem; line-height: 1.2; }
+
+.card-qty {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #e2b96f;
+}

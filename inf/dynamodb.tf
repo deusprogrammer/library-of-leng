@@ -50,6 +50,11 @@ resource "aws_dynamodb_table" "carts" {
     type = "S"
   }
 
+  ttl {
+    attribute_name = "expiresAt"
+    enabled        = true
+  }
+
   global_secondary_index {
     name            = "cart-by-shop-and-slug"
     projection_type = "ALL"

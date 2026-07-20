@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { generateCartSlug } from "../utils/cart.mjs";
+import { generateCartSlug, getCartById } from "../utils/cart.mjs";
 import { getShopId } from "../utils/shop.mjs";
 import { getCartMetaBySlug } from "../utils/cart.mjs";
 import { jsonResponse } from "../utils/util.mjs";
@@ -12,12 +12,24 @@ const cartTableName = process.env.CARTS_TABLE;
 const client = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(client);
 
+const hashString = (str) => {
+    return createHash("sha256")
+        .update(str)
+        .digest("hex");
+}
+
 export const getCart = async (event) => {
     try {
         const identifier = event.pathParameters?.identifier;
-        const slug = event.pathParameters?.slug;
+        const slug = event.pathParameters?.cartSlug;
 
         const shopId = await getShopId(identifier);
+
+        if (!shopId || !slug) {
+            return jsonResponse(400, {
+                message: "Shop id and cart slug required"
+            });
+        }
 
         if (!shopId) {
             return jsonResponse(404, {
@@ -25,21 +37,32 @@ export const getCart = async (event) => {
             });
         }
 
-        const cartData = await getCartMetaBySlug(shopId, slug);
+        const cartMeta = await getCartMetaBySlug(shopId, slug);
 
-        if (!cartData) {
+        if (!cartMeta) {
             return jsonResponse(404, {
                 message: "Cart not found."
             });
         }
 
-        const cartEntries = await getCartById(cartData.cartId);
+        const cartToken = event.headers["x-cart-token"];
+
+        if (!cartToken) {
+            return jsonResponse(401, {
+                message: "Unauthorized"
+            });
+        }
+
+        if (cartToken !== cartMeta.tokenHash) {
+            return jsonResponse(403, {
+                message: "Forbidden"
+            });
+        }
+
+        const cart = await getCartById(cartMeta.cartId);
 
         return jsonResponse(200, {
-            ...cartData,
-            items: cartEntries.filter(
-                (item) => item.itemKey !== "META"
-            )
+            items: cart.items
         });
     } catch (error) {
         console.error(error);
@@ -106,6 +129,20 @@ export const addToCart = async (event) => {
             });
         }
 
+        const cartToken = event.headers["x-cart-token"];
+
+        if (!cartToken) {
+            return jsonResponse(401, {
+                message: "Unauthorized"
+            })
+        }
+
+        if (cartToken !== cartMeta.tokenHash) {
+            return jsonResponse(403, {
+                message: "Forbidden"
+            });
+        }
+
         const inventoryResult = await documentClient.send(
             new GetCommand({
                 TableName: inventoryTableName,
@@ -134,6 +171,9 @@ export const addToCart = async (event) => {
 
         const maximumExistingQuantity =
             inventoryItem.quantity - quantity;
+        
+        const createdAt = Math.floor(Date.now() / 1000);
+        const expiresAt = createdAt + (60 * 60 * 6); // 6 hours
 
         let result;
 
@@ -154,9 +194,11 @@ export const addToCart = async (event) => {
                             scryfallId = :scryfallId,
                             #name = :name,
                             setCode = :setCode,
-                            finish = :finish,
+                            #finish = :finish,
                             thumbnailUrl = :thumbnailUrl,
                             #location = :location
+                            createdAt = :createdAt
+                            expiresAt = :expiresAt
                         ADD quantity :quantity
                     `,
 
@@ -167,7 +209,8 @@ export const addToCart = async (event) => {
 
                     ExpressionAttributeNames: {
                         "#name": "name",
-                        "#location": "location"
+                        "#location": "location",
+                        "#finish": "finish"
                     },
 
                     ExpressionAttributeValues: {
@@ -183,7 +226,9 @@ export const addToCart = async (event) => {
                             inventoryItem.location ?? null,
                         ":quantity": quantity,
                         ":maximumExistingQuantity":
-                            maximumExistingQuantity
+                            maximumExistingQuantity,
+                        ":createdAt": createdAt,
+                        ":expiresAt": expiresAt
                     },
 
                     ReturnValues: "ALL_NEW"
@@ -201,7 +246,7 @@ export const addToCart = async (event) => {
             throw error;
         }
 
-        return jsonResponse(200, {
+        return jsonResponse(204, {
             cartId: cartMeta.cartId,
             slug: cartMeta.slug,
             item: result.Attributes
@@ -240,9 +285,7 @@ export const createCart = async (event) => {
         const cartId = randomUUID();
         const slug = generateCartSlug();
 
-        const tokenHash = createHash("sha256")
-            .update(token)
-            .digest("hex");
+        const tokenHash = hashString(token);
 
         const item = {
             shopId,
