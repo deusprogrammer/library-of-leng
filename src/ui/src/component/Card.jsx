@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { getPrice } from '../api/scryfall/scry-client';
 
-const Card = ({ card }) => {
+const Card = ({ card, hide }) => {
     return (
         <Link to={`/shops/${card.shopId}/inventory/${encodeURIComponent(card.inventoryId)}`}>
             <div style={{display: 'flex', flexDirection: 'column', width: '146px'}}>
@@ -9,7 +10,9 @@ const Card = ({ card }) => {
                     <img src={card.thumbnailUrl} />
                 </div>
                 <div>
-                    {card.name}
+                    {!hide?.includes("name") && card.name}
+                    <br />
+                    {!hide?.includes("price") && card.prices && `$${getPrice(card)}`}
                 </div>
             </div>
         </Link>

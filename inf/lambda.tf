@@ -125,6 +125,30 @@ locals {
       }
     }
 
+    get_inventory_batch = {
+      handler   = "index.getInventoryBatch"
+      route_key = "POST /shops/{identifier}/search/batch"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:Query",
+          ]
+        }
+      }
+    }
+
     get_inventory_item = {
       handler   = "index.getInventoryItem"
       route_key = "GET /shops/{identifier}/inventory/{inventoryId}"

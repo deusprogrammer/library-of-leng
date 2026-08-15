@@ -1,5 +1,27 @@
+import { normalizeName } from "./util.mjs";
+
+const MAX_COLLECTION_SIZE = 75;
+
 const SCRYFALL_COLLECTION_URL =
     "https://api.scryfall.com/cards/collection";
+const SCRYFALL_USER_AGENT =
+    process.env.SCRYFALL_USER_AGENT ??
+    "LibraryOfLeng/0.1 (+https://github.com/deusprogrammer/library-of-leng)";
+const SCRYFALL_HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    "User-Agent": SCRYFALL_USER_AGENT
+};
+
+const chunk = (array, size) => {
+    const chunks = [];
+
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+
+    return chunks;
+};
 
 export const expandItems = async (items) => {
     if (items.length > 75) {
@@ -14,11 +36,7 @@ export const expandItems = async (items) => {
 
     const response = await fetch(SCRYFALL_COLLECTION_URL, {
         method: "POST",
-        headers: {
-            "content-type": "application/json",
-            "accept": "application/json",
-            "user-agent": "LibraryOfLeng/0.1"
-        },
+        headers: SCRYFALL_HEADERS,
         body: JSON.stringify(requestBody)
     });
 
@@ -32,15 +50,6 @@ export const expandItems = async (items) => {
     }
 
     const result = await response.json();
-
-    const normalizeName = (name) =>
-        name
-            .normalize("NFD")
-            .replace(/\p{Diacritic}/gu, "")
-            .replace(/[^\w\s]/g, "")
-            .replace(/\s+/g, " ")
-            .trim()
-            .toLowerCase();
 
     const extractBrowseCategory = (typeLine) => {
         if (!typeLine) return "other";
@@ -89,5 +98,56 @@ export const expandItems = async (items) => {
     return {
         cards,
         notFound: result.not_found ?? []
+    };
+};
+
+export const getScryfallCollection = async (scryfallIds) => {
+    const validIds = [...new Set(
+        (scryfallIds ?? [])
+            .filter((id) => typeof id === "string")
+            .map((id) => id.trim())
+            .filter((id) => id.length > 0)
+    )];
+
+    if (validIds.length === 0) {
+        return {
+            data: [],
+            warnings: [],
+            not_found: []
+        };
+    }
+
+    const batches = chunk(validIds, MAX_COLLECTION_SIZE);
+
+    const responses = await Promise.all(
+        batches.map(async (batch) => {
+            const response = await fetch(
+                  SCRYFALL_COLLECTION_URL,
+                {
+                    method: 'POST',
+                      headers: SCRYFALL_HEADERS,
+                    body: JSON.stringify({
+                        identifiers: batch.map(id => ({ id }))
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                const errorBody = await response.text();
+
+                throw new Error(
+                    `Failed to retrieve Scryfall collection. ` +
+                    `Status: ${response.status}. Body: ${errorBody}`
+                );
+            }
+
+            return response.json();
+        })
+    );
+
+    return {
+        data: responses.flatMap(r => r.data),
+        warnings: responses.flatMap(r => r.warnings ?? []),
+        not_found: responses.flatMap(r => r.not_found ?? [])
     };
 };

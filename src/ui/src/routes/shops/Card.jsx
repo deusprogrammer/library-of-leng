@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { getShopInventoryItem } from '../api/lol/lol-inventory-client';
-import { getPrice, getScryfallCard } from '../api/scryfall/scry-client';
-import { addToCart } from '../api/lol/lol-cart-client';
+import { getShopInventoryItem } from '../../api/lol/lol-inventory-client';
+import { getPrice, getScryfallCard } from '../../api/scryfall/scry-client';
+import { addToCart } from '../../api/lol/lol-cart-client';
 import { useAtom } from 'jotai';
-import { cartAtom } from '../atoms/CartAtom';
+import { cartAtom } from '../../atoms/CartAtom';
 
 const Card = () => {
     const [card, setCard] = useState({});

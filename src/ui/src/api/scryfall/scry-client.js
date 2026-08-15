@@ -24,14 +24,28 @@ export const getScryfallCard = async (scryfallId) => {
     return await response.json();
 };
 
+export const getSets = async () => {
+    const response = await fetch("https://api.scryfall.com/sets");
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch sets: ${response.status}`);
+    }
+
+    const json = await response.json();
+
+    return json.data;
+};
+
 export const getPrice = (card) => {
     const prices = card.prices;
 
-    if (card.finishes.includes("etched")) {
+    console.log("PRICES: " + JSON.stringify(prices, null, 2));
+
+    if (card.finishes?.includes("etched")) {
         return prices.usd_etched;
     }
 
-    if (card.finishes.includes("foil") && !card.finishes.includes("nonfoil")) {
+    if (card.finishes?.includes("foil") && !card.finishes?.includes("nonfoil")) {
         return prices.usd_foil;
     }
 

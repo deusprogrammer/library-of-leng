@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { normalizeName } from "./util.mjs";
 
 const inventoryTableName = process.env.INVENTORY_TABLE;
 const client = new DynamoDBClient({});
@@ -84,3 +85,21 @@ export const getInventoryEntry = async (shopId, inventoryId) => {
 
     return response.Item;
 };
+
+export const getInventoryEntryByName = async (shopId, name) => {
+    const normalizedName = normalizeName(name);
+
+    console.info("Searching for", { shopId, normalizedName });
+
+    const response = await documentClient.send(new QueryCommand({
+        TableName: inventoryTableName,
+        IndexName: "inventory-by-name",
+        KeyConditionExpression: "shopId = :shopId AND normalizedName = :normalizedName",
+        ExpressionAttributeValues: {
+            ":shopId": shopId,
+            ":normalizedName": normalizedName
+        }
+    }));
+
+    return response.Items ?? [];
+}

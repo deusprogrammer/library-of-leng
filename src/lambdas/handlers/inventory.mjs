@@ -1,9 +1,9 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { getShopId } from "../utils/shop.mjs";
-import { jsonResponse } from "../utils/util.mjs";
-import { createInventoryId, getInventoryEntry, upsertInventory } from "../utils/inventory.mjs";
-import { expandItems } from "../utils/scryfall.mjs";
+import { jsonResponse, normalizeName } from "../utils/util.mjs";
+import { createInventoryId, getInventoryEntry, getInventoryEntryByName, upsertInventory } from "../utils/inventory.mjs";
+import { expandItems, getScryfallCollection } from "../utils/scryfall.mjs";
 
 const inventoryTableName = process.env.INVENTORY_TABLE;
 const client = new DynamoDBClient({});
@@ -54,12 +54,27 @@ export const addBatchInventory = async (event, context) => {
 
     const identifier = event.pathParameters?.identifier;
     const shopId = await getShopId(identifier);
+
+    if (typeof shopId !== "string") {
+        return shopId;
+    }
+
+    const items = Array.isArray(requestBody)
+        ? requestBody
+        : requestBody.items;
+
+    if (!Array.isArray(items)) {
+        return jsonResponse(400, {
+            message: "Request body must be either an array of inventory items or an object with an 'items' array."
+        });
+    }
+
     const created = [];
     const failed = [];
 
     let start = 0;
-    while (start < requestBody.items.length) {
-        const currentBatch = requestBody.items.slice(start, start + 75);
+    while (start < items.length) {
+        const currentBatch = items.slice(start, start + 75);
 
         let scryfallData;
         try {
@@ -173,4 +188,121 @@ export const getInventoryItem = async (event) => {
     }
 
     return jsonResponse(200, inventoryEntry);
+};
+
+export const getInventoryBatch = async (event) => {
+    const { identifier } = event.pathParameters;
+    const shopId = await getShopId(identifier);
+
+    let requestBody;
+    try {
+        requestBody = JSON.parse(event.body);
+
+        if (!requestBody) {
+            return jsonResponse(400, {
+                message: "Request does not include a shop entity",
+            }, "Request does not include a shop entity");
+        }
+    } catch (err) {
+        return jsonResponse(
+            400,
+            { message: "Unable to parse body JSON" },
+            err
+        );
+    }
+
+    if (!Array.isArray(requestBody)) {
+        return jsonResponse(400, {
+            message: "Request body must be an array of items with at least a 'name' field."
+        });
+    }
+
+    const results = await Promise.all(
+        requestBody.map(async ({ name, quantity }) => {
+            try {
+                const items = await getInventoryEntryByName(shopId, name);
+
+                return {
+                    name,
+                    items
+                };
+            } catch (err) {
+                console.error("Inventory batch lookup failed", {
+                    shopId,
+                    name,
+                    error: err?.message
+                });
+
+                return {
+                    name,
+                    items: [],
+                    error: "lookup_failed"
+                };
+            }
+        })
+    );
+
+    const ambiguousResults = results.filter(
+        (result) => result.items && result.items.length > 1
+    );
+
+    const nonambiguousResults = results.filter(
+        (result) => result.items && result.items.length === 1
+    );
+
+    const notFound = results.filter(
+        (result) => result.items?.length <= 0
+    );
+
+    const scryfallIdentifiers = [
+        ...nonambiguousResults.flatMap((result) =>
+            result.items.map((item) => item.scryfallId)
+        ),
+        ...ambiguousResults.flatMap((result) =>
+            result.items.map((item) => item.scryfallId)
+        )
+    ];
+
+    const scryfallResponse = await getScryfallCollection(
+        scryfallIdentifiers
+    );
+
+    const scryfallCardsById = new Map(
+        (scryfallResponse.data ?? []).map((card) => [card.id, card])
+    );
+
+    nonambiguousResults.forEach((result) => {
+        result.items = result.items.map((item) => {
+            const scryfallCard = scryfallCardsById.get(
+                item.scryfallId
+            );
+
+            return {
+                ...item,
+                prices: scryfallCard?.prices ?? null
+            };
+        });
+    });
+
+    ambiguousResults.forEach((result) => {
+        result.items = result.items.map((item) => {
+            const scryfallCard = scryfallCardsById.get(
+                item.scryfallId
+            );
+
+            return {
+                ...item,
+                prices: scryfallCard?.prices ?? null
+            };
+        });
+    });
+
+    return jsonResponse(
+        200,
+        {
+            nonambiguousResults,
+            ambiguousResults,
+            notFound
+        }
+    );
 };

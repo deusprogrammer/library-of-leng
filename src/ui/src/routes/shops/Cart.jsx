@@ -1,9 +1,9 @@
 import { useAtom } from 'jotai';
 import React, { useEffect, useState } from 'react';
-import { cartAtom } from '../atoms/CartAtom';
-import { getStoreCartMeta } from '../api/lol/lol-cart-client';
-import { getScryfallCollection } from '../api/scryfall/scry-client';
 import { useParams } from 'react-router-dom';
+import { cartAtom } from '../../atoms/CartAtom';
+import { getStoreCartMeta } from '../../api/lol/lol-cart-client';
+import { getScryfallCollection } from '../../api/scryfall/scry-client';
 
 const getPrice = (scryfallCard) => {
     if (!scryfallCard?.prices) {

@@ -1,11 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Shop from './routes/Shop'
 import CategoryView from './routes/CategoryView'
-import Cards from './routes/Cards'
+import Cards from './routes/shops/Cards'
 import Inventory from './routes/shops/Inventory'
-import Cart from './routes/Cart'
+import Cart from './routes/shops/Cart'
 import ShopHome from './routes/shops/ShopHome'
-import Card from './routes/Card'
+import Card from './routes/shops/Card'
+import SearchDrill from './routes/shops/SearchDrill'
+import MoxSearch from './routes/shops/MoxSearch'
 
 
 export default function App() {
@@ -17,6 +19,11 @@ export default function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="inventory/:inventoryId" element={<Card />} />
           <Route path="cart" element={<Cart />} />
+
+          <Route path="drill/:drillKey" element={<SearchDrill />} />
+          <Route path="drill/:drillKey/:drillValue" element={<Cards />} />
+
+          <Route path="moxfield/search" element={<MoxSearch />} />
         </Route>
       </Routes>
     </BrowserRouter>

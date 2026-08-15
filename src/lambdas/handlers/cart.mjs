@@ -196,8 +196,8 @@ export const addToCart = async (event) => {
                             setCode = :setCode,
                             #finish = :finish,
                             thumbnailUrl = :thumbnailUrl,
-                            #location = :location
-                            createdAt = :createdAt
+                            #location = :location,
+                            createdAt = :createdAt,
                             expiresAt = :expiresAt
                         ADD quantity :quantity
                     `,

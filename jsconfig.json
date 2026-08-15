@@ -1,18 +1,10 @@
 {
-    "compilerOptions": {
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "target": "ES2024",
-        "jsx": "react-jsx",
-        "allowImportingTsExtensions": true,
-        "checkJs": false,
-        "experimentalDecorators": false,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "strict": true
-    },
-    "exclude": [
-        "node_modules",
-        "**/node_modules/*"
-    ]
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "checkJs": true,
+    "strict": false
+  },
+  "include": ["src/**/*.mjs"]
 }
