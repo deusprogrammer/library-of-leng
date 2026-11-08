@@ -38,3 +38,8 @@ variable "dynamodb_tables" {
     actions = list(string)
   }))
 }
+variable "authorizer_id" {
+  type        = string
+  default     = null
+  description = "Optional API Gateway JWT authorizer id. When set, the route requires a valid JWT."
+}

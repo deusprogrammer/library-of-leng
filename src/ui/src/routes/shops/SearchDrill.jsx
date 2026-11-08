@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getSets } from '../../api/scryfall/scry-client';
 import { CATEGORIES, COLORS, RARITIES } from '../../etc/filters';
+import ManaLoader from '../../component/ManaLoader';
 
 const SearchDrill = () => {
     const [drills, setDrills] = useState({
@@ -10,6 +11,7 @@ const SearchDrill = () => {
         rarity: [...RARITIES],
         color: [...COLORS]
     });
+    const [setsLoading, setSetsLoading] = useState(true);
     const { drillKey, shopId } = useParams();
 
     useEffect(() => {
@@ -23,9 +25,15 @@ const SearchDrill = () => {
                 }));
             } catch (err) {
                 console.error("Unable to load Scryfall sets for drill page", err);
+            } finally {
+                setSetsLoading(false);
             }
         })();
     }, []);
+
+    if (drillKey === "set" && setsLoading) {
+        return <ManaLoader />;
+    }
 
     return (
         <>

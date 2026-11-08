@@ -3,12 +3,23 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { jsonResponse } from "../utils/util.mjs";
 import { isUUID, slugify } from "../utils/shop.mjs";
+import { getUserId, hasAnyGroup } from "../utils/auth.mjs";
 
 const shopTableName = process.env.SHOPS_TABLE;
 const client = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(client);
 
 export const createShop = async (event, context) => {
+    const ownerId = getUserId(event);
+
+    if (!ownerId) {
+        return jsonResponse(401, { message: "Unauthorized" });
+    }
+
+    if (!hasAnyGroup(event, "shop_owner", "admin")) {
+        return jsonResponse(403, { message: "Only shop owners can create shops" });
+    }
+
     let requestBody;
     try {
         requestBody = JSON.parse(event.body);
@@ -23,7 +34,8 @@ export const createShop = async (event, context) => {
     const shop = {
         ...requestBody,
         shopId: randomUUID(),
-        slug: requestBody.slug || slugify(requestBody.name)
+        slug: requestBody.slug || slugify(requestBody.name),
+        ownerId
     };
 
     try {
@@ -49,6 +61,33 @@ export const getShops = async (event, context) => {
         )))?.Items;
     } catch (err) {
         return jsonResponse(500, { message: "Failed to retrieve shops" }, err);
+    }
+
+    return jsonResponse(200, shops);
+}
+
+export const getMyShops = async (event, context) => {
+    const ownerId = getUserId(event);
+
+    if (!ownerId) {
+        return jsonResponse(401, { message: "Unauthorized" });
+    }
+
+    let shops;
+
+    try {
+        shops = (await documentClient.send(new QueryCommand(
+            {
+                TableName: shopTableName,
+                IndexName: "owner",
+                KeyConditionExpression: "ownerId = :ownerId",
+                ExpressionAttributeValues: {
+                    ":ownerId": ownerId
+                }
+            }
+        )))?.Items ?? [];
+    } catch (err) {
+        return jsonResponse(500, { message: "Failed to retrieve owned shops" }, err);
     }
 
     return jsonResponse(200, shops);

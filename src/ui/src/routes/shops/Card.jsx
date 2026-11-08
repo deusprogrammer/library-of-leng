@@ -5,6 +5,7 @@ import { getPrice, getScryfallCard } from '../../api/scryfall/scry-client';
 import { addToCart } from '../../api/lol/lol-cart-client';
 import { useAtom } from 'jotai';
 import { cartAtom } from '../../atoms/CartAtom';
+import ManaLoader from '../../component/ManaLoader';
 
 const Card = () => {
     const [card, setCard] = useState({});
@@ -21,6 +22,10 @@ const Card = () => {
             setScryfallData(scryfallRes);
         })();
     }, []);
+
+    if (!scryfallData) {
+        return <ManaLoader />;
+    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

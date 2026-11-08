@@ -1,6 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { jsonResponse } from "./util.mjs";
+import { getUserId, hasAnyGroup } from "./auth.mjs";
 
 const client = new DynamoDBClient({});
 const shopTableName = process.env.SHOPS_TABLE;
@@ -27,6 +28,32 @@ export const isUUID = (identifier) => {
     return UUID_REGEX.test(identifier);
 }
 
+export const getShopByIdentifier = async (identifier) => {
+    if (!identifier) {
+        return undefined;
+    }
+
+    if (UUID_REGEX.test(identifier)) {
+        return (await documentClient.send(new GetCommand({
+            TableName: shopTableName,
+            Key: {
+                shopId: identifier
+            }
+        })))?.Item;
+    }
+
+    return (await documentClient.send(new QueryCommand(
+        {
+            TableName: shopTableName,
+            IndexName: "slug",
+            KeyConditionExpression: "slug = :slug",
+            ExpressionAttributeValues: {
+                ":slug": identifier
+            }
+        })
+    ))?.Items?.[0];
+};
+
 export const getShopId = async (identifier) => {
     try {
         if (UUID_REGEX.test(identifier)) {
@@ -48,3 +75,32 @@ export const getShopId = async (identifier) => {
         return jsonResponse(500, { message: "Failed to retrieve shop" }, err);
     }
 }
+/**
+ * Loads the shop for an identifier and verifies that the calling user
+ * owns it (or is an admin). Returns { shop } on success or
+ * { errorResponse } when the caller should be rejected.
+ */
+export const authorizeShopAccess = async (event, identifier) => {
+    const userId = getUserId(event);
+
+    if (!userId) {
+        return { errorResponse: jsonResponse(401, { message: "Unauthorized" }) };
+    }
+
+    let shop;
+    try {
+        shop = await getShopByIdentifier(identifier);
+    } catch (err) {
+        return { errorResponse: jsonResponse(500, { message: "Failed to retrieve shop" }, err) };
+    }
+
+    if (!shop) {
+        return { errorResponse: jsonResponse(404, { message: "Shop not found" }) };
+    }
+
+    if (shop.ownerId !== userId && !hasAnyGroup(event, "admin")) {
+        return { errorResponse: jsonResponse(403, { message: "You do not own this shop" }) };
+    }
+
+    return { shop };
+};

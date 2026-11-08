@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { cartAtom } from '../../atoms/CartAtom';
 import { getStoreCartMeta } from '../../api/lol/lol-cart-client';
 import { getScryfallCollection } from '../../api/scryfall/scry-client';
+import ManaLoader from '../../component/ManaLoader';
 
 const getPrice = (scryfallCard) => {
     if (!scryfallCard?.prices) {
@@ -32,6 +33,7 @@ const Cart = () => {
     const [cart] = useAtom(cartAtom);
     const [cartMeta, setCartMeta] = useState({});
     const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const { shopId } = useParams();
 
@@ -42,6 +44,7 @@ const Cart = () => {
 
             if (!cart?.items?.length) {
                 setItems([]);
+                setLoading(false);
                 return;
             }
 
@@ -64,6 +67,7 @@ const Cart = () => {
                     };
                 })
             );
+            setLoading(false);
         };
 
         loadCartPrices();
@@ -73,6 +77,10 @@ const Cart = () => {
         (sum, item) => sum + item.price * item.quantity,
         0
     );
+
+    if (loading) {
+        return <ManaLoader />;
+    }
 
     return (
         <div

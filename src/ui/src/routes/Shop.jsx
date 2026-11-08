@@ -4,9 +4,11 @@ import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { getCart } from '../api/lol/lol-cart-client';
 import { cartAtom } from '../atoms/CartAtom';
 import { useAtom } from 'jotai';
+import ManaLoader from '../component/ManaLoader';
 
 const Shop = () => {
     const [shop, setShop] = useState({});
+    const [loading, setLoading] = useState(true);
     const [cart, setCart] = useAtom(cartAtom);
 
     const { shopId } = useParams();
@@ -18,8 +20,13 @@ const Shop = () => {
             const cartData = await getCart(shopId);
             setShop(shopData);
             setCart(cartData);
+            setLoading(false);
         })();
     }, []);
+
+    if (loading) {
+        return <ManaLoader />;
+    }
 
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>

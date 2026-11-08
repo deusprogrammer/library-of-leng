@@ -1,8 +1,8 @@
 import { randomUUID, createHash } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { generateCartSlug, getCartById } from "../utils/cart.mjs";
-import { getShopId } from "../utils/shop.mjs";
+import { getShopId, authorizeShopAccess } from "../utils/shop.mjs";
 import { getCartMetaBySlug } from "../utils/cart.mjs";
 import { jsonResponse } from "../utils/util.mjs";
 
@@ -17,6 +17,43 @@ const hashString = (str) => {
         .update(str)
         .digest("hex");
 }
+
+export const listCarts = async (event) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const { shop, errorResponse } = await authorizeShopAccess(event, identifier);
+
+        if (errorResponse) {
+            return errorResponse;
+        }
+
+        // Only META records carry a slug, so this query returns one row per cart.
+        const metaRecords = (await documentClient.send(new QueryCommand({
+            TableName: cartTableName,
+            IndexName: "cart-by-shop-and-slug",
+            KeyConditionExpression: "shopId = :shopId",
+            ExpressionAttributeValues: {
+                ":shopId": shop.shopId
+            }
+        })))?.Items ?? [];
+
+        const carts = await Promise.all(
+            metaRecords.map(async (meta) => {
+                const cart = await getCartById(meta.cartId);
+                const { tokenHash, ...safeMeta } = meta;
+
+                return {
+                    ...safeMeta,
+                    items: cart?.items ?? []
+                };
+            })
+        );
+
+        return jsonResponse(200, carts);
+    } catch (error) {
+        return jsonResponse(500, { message: "Failed to list carts" }, error);
+    }
+};
 
 export const getCart = async (event) => {
     try {

@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import { getShopId } from "../utils/shop.mjs";
+import { getShopId, authorizeShopAccess } from "../utils/shop.mjs";
 import { jsonResponse, normalizeName } from "../utils/util.mjs";
 import { createInventoryId, getInventoryEntry, getInventoryEntryByName, upsertInventory } from "../utils/inventory.mjs";
 import { expandItems, getScryfallCollection } from "../utils/scryfall.mjs";
@@ -22,7 +22,13 @@ export const addInventory = async (event, context) => {
     }
 
     const identifier = event.pathParameters?.identifier;
-    const shopId = await getShopId(identifier);
+    const { shop, errorResponse } = await authorizeShopAccess(event, identifier);
+
+    if (errorResponse) {
+        return errorResponse;
+    }
+
+    const shopId = shop.shopId;
 
     const inventoryItem = {
         ...requestBody,
@@ -53,11 +59,13 @@ export const addBatchInventory = async (event, context) => {
     }
 
     const identifier = event.pathParameters?.identifier;
-    const shopId = await getShopId(identifier);
+    const { shop, errorResponse } = await authorizeShopAccess(event, identifier);
 
-    if (typeof shopId !== "string") {
-        return shopId;
+    if (errorResponse) {
+        return errorResponse;
     }
+
+    const shopId = shop.shopId;
 
     const items = Array.isArray(requestBody)
         ? requestBody

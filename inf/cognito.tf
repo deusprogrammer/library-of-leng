@@ -32,11 +32,13 @@ resource "aws_cognito_user_pool_client" "inventory_client" {
     ]
 
     callback_urls = [
-        "http://localhost:5173/auth/callback"
+        "http://localhost:5173/auth/callback",
+        "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.ui.default_domain}/auth/callback"
     ]
 
     logout_urls = [
-        "https://localhost:5173/"
+        "https://localhost:5173/",
+        "https://${aws_amplify_branch.main.branch_name}.${aws_amplify_app.ui.default_domain}/"
     ]
 
     supported_identity_providers = [

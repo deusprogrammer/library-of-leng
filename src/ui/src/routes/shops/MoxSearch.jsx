@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { getShopInventory, getShopInventoryBatch } from '../../api/lol/lol-inventory-client';
 import { useParams } from 'react-router-dom';
 import Card from '../../component/Card';
+import ManaLoader from '../../component/ManaLoader';
 
 const MoxSearch = () => {
     const [moxfieldList, setMoxfieldList] = useState();
     const [hideList, setHideList] = useState(false);
     const [cards, setCards] = useState([]);
     const [ambiguousCards, setAmbiguousCards] = useState([]);
+    const [searching, setSearching] = useState(false);
 
     const { shopId } = useParams();
 
@@ -28,11 +30,20 @@ const MoxSearch = () => {
 
     const search = async (text) => {
         setHideList(false);
+        setSearching(true);
         const payload = parseMoxfieldList(text);
 
-        const results = await getShopInventoryBatch(shopId, payload);
-        setCards(results?.nonambiguousResults?.flatMap((result) => result.items.map((card => card))));
-        setAmbiguousCards(results?.ambiguousResults);
+        try {
+            const results = await getShopInventoryBatch(shopId, payload);
+            setCards(results?.nonambiguousResults?.flatMap((result) => result.items.map((card => card))));
+            setAmbiguousCards(results?.ambiguousResults);
+        } finally {
+            setSearching(false);
+        }
+    }
+
+    if (searching) {
+        return <ManaLoader />;
     }
 
     return (

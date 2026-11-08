@@ -86,6 +86,9 @@ resource "aws_apigatewayv2_route" "this" {
   route_key = var.route_key
 
   target = "integrations/${aws_apigatewayv2_integration.this.id}"
+
+  authorization_type = var.authorizer_id == null ? "NONE" : "JWT"
+  authorizer_id      = var.authorizer_id
 }
 
 resource "aws_iam_policy" "this" {

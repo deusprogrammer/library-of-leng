@@ -13,12 +13,27 @@ resource "aws_dynamodb_table" "shops" {
     type = "S"
   }
 
+  attribute {
+    name = "ownerId"
+    type = "S"
+  }
+
   global_secondary_index {
     name            = "slug"
     projection_type = "ALL"
 
     key_schema {
       attribute_name = "slug"
+      key_type       = "HASH"
+    }
+  }
+
+  global_secondary_index {
+    name            = "owner"
+    projection_type = "ALL"
+
+    key_schema {
+      attribute_name = "ownerId"
       key_type       = "HASH"
     }
   }

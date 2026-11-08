@@ -1,49 +1,56 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { exchangeCodeForTokens, isShopOwner } from "../api/auth";
+import ManaLoader from "../component/ManaLoader";
 
 const AuthCallback = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const [error, setError] = useState(null);
+
     const code = searchParams.get("code");
-    
-    const COGNITO_URL = 'https://library-of-leng.auth.us-east-1.amazoncognito.com/oauth2/token';
-    const COGNITO_CLIENT_ID = '45eu0ccq0jfkpm6l0rus56298h';
-    const COGNITO_REDIRECT_URI = 'http://localhost:5173/auth/callback';
+    const oauthError = searchParams.get("error");
+
+    // The OAuth code is single-use; guard against StrictMode double-invoke.
+    const exchangeStarted = useRef(false);
 
     useEffect(() => {
-        if (code) {
-            (async () => {
-                const response = await fetch(COGNITO_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: new URLSearchParams({
-                        grant_type: "authorization_code",
-                        client_id: COGNITO_CLIENT_ID,
-                        code,
-                        redirect_uri: COGNITO_REDIRECT_URI
-                    })
-                });
-
-                const tokens = await response.json();
-                console.log(tokens);
-
-                sessionStorage.setItem("accessToken", tokens.access_token);
-                sessionStorage.setItem("idToken", tokens.id_token);
-                sessionStorage.setItem("refreshToken", tokens.refresh_token);
-
-                navigate("/");
-            })();
+        if (oauthError) {
+            setError(searchParams.get("error_description") ?? oauthError);
+            return;
         }
 
-    }, [code]);
+        if (!code || exchangeStarted.current) {
+            return;
+        }
+
+        exchangeStarted.current = true;
+
+        (async () => {
+            try {
+                await exchangeCodeForTokens(code);
+            } catch (err) {
+                console.error(err);
+                setError("Login failed. Please try again.");
+                return;
+            }
+
+            navigate(isShopOwner() ? "/owner" : "/", { replace: true });
+        })();
+    }, [code, oauthError]);
+
+    if (error) {
+        return (
+            <>
+                <h1>Login failed</h1>
+                <p>{error}</p>
+            </>
+        );
+    }
 
     return (
-        <>
-            <h1>Logged In</h1>
-        </>
-    )
-}
+        <ManaLoader phrase="Logging in..." />
+    );
+};
 
 export default AuthCallback;

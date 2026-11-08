@@ -8,6 +8,7 @@ locals {
     create_shop = {
       handler   = "index.createShop"
       route_key = "POST /shops"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
@@ -15,6 +16,22 @@ locals {
           arn  = aws_dynamodb_table.shops.arn
           actions = [
             "dynamodb:PutItem"
+          ]
+        }
+      }
+    }
+
+    get_my_shops = {
+      handler   = "index.getMyShops"
+      route_key = "GET /my/shops"
+      protected = true
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:Query"
           ]
         }
       }
@@ -54,6 +71,7 @@ locals {
     add_inventory = {
       handler   = "index.addInventory"
       route_key = "POST /shops/{identifier}/inventory"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
@@ -79,6 +97,7 @@ locals {
     add_batch_inventory = {
       handler   = "index.addBatchInventory"
       route_key = "POST /shops/{identifier}/inventory/batch"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
@@ -168,6 +187,31 @@ locals {
           arn  = aws_dynamodb_table.inventory.arn
           actions = [
             "dynamodb:GetItem",
+          ]
+        }
+      }
+    }
+
+    list_carts = {
+      handler   = "index.listCarts"
+      route_key = "GET /shops/{identifier}/carts"
+      protected = true
+
+      dynamodb_tables = {
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query"
+          ]
+        }
+
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
           ]
         }
       }
@@ -277,6 +321,8 @@ module "lambdas" {
   function_name = each.key
   handler       = each.value.handler
   route_key     = each.value.route_key
+
+  authorizer_id = try(each.value.protected, false) ? aws_apigatewayv2_authorizer.cognito.id : null
 
   dynamodb_tables = each.value.dynamodb_tables
 }

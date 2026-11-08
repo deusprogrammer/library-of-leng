@@ -162,45 +162,60 @@ a {
   font-family: monospace;
 }
 
-/* ── Loading interstitial ─────────────────────────────── */
+/* ── Mana loader interstitial ─────────────────────────── */
 
 .loading-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
-  gap: 2rem;
+  min-height: 40vh;
 }
 
-.loading-text {
-  font-size: 1.2rem;
-  color: #888;
-}
-
-.loading-card-wrap {
-  perspective: 400px;
-  width: 146px;
-  height: 204px;
+.mana-loader {
+  position: relative;
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-@keyframes spin-card {
-  from { transform: rotateY(0deg); }
-  to   { transform: rotateY(360deg); }
+.mana-loader__orbit {
+  position: absolute;
+  inset: 0;
+  animation: mana-spin 2.4s linear infinite;
 }
 
-.loading-card {
-  width: 146px;
-  border-radius: 8px;
-  animation: spin-card 3s linear infinite;
-  transition: opacity 0.25s ease;
+.mana-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
-.loading-card.fade-out {
-  opacity: 0;
+.mana-dot--w { background: #f8f6d8; transform: rotate(0deg) translate(58px); }
+.mana-dot--u { background: #0e68ab; transform: rotate(72deg) translate(58px); }
+.mana-dot--b { background: #3b2f4a; border: 1px solid #766a86; transform: rotate(144deg) translate(58px); }
+.mana-dot--r { background: #d3202a; transform: rotate(216deg) translate(58px); }
+.mana-dot--g { background: #00733e; transform: rotate(288deg) translate(58px); }
+
+@keyframes mana-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.mana-loader__phrase {
+  max-width: 96px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #e2b96f;
+  z-index: 1;
 }
 
 /* ── Card grid ────────────────────────────────────────── */

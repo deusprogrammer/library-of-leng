@@ -15,6 +15,18 @@ resource "aws_apigatewayv2_stage" "library_of_leng" {
   auto_deploy = true
 }
 
+resource "aws_apigatewayv2_authorizer" "cognito" {
+  api_id           = aws_apigatewayv2_api.library_of_leng.id
+  authorizer_type  = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+  name             = "cognito-jwt"
+
+  jwt_configuration {
+    audience = [aws_cognito_user_pool_client.inventory_client.id]
+    issuer   = "https://${aws_cognito_user_pool.inventory_users.endpoint}"
+  }
+}
+
 output "api_url" {
   value = aws_apigatewayv2_api.library_of_leng.api_endpoint
 }

@@ -2,17 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getShopInventory } from '../../api/lol/lol-inventory-client';
 import Card from '../../component/Card';
+import ManaLoader from '../../component/ManaLoader';
 
 const Inventory = () => {
     const [ inventory, setInventory ] = useState([]);
+    const [ loading, setLoading ] = useState(true);
     const { shopId } = useParams();
 
     useEffect(() => {
         (async () => {
             const inventoryData = await getShopInventory(shopId);
             setInventory(inventoryData);
+            setLoading(false);
         })()
     }, []);
+
+    if (loading) {
+        return <ManaLoader />;
+    }
 
     return (
         <div style={{display: 'flex', flexDirection: 'column', gap: '20px;', textAlign: 'center'}}>
