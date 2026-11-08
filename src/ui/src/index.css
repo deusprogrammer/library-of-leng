@@ -16,6 +16,64 @@ a {
   color: inherit;
 }
 
+/* ── Base form controls ──────────────────────────────────
+   Sensible dark-theme defaults for native elements, so pages that don't
+   opt into a more specific class (e.g. .search-form) still look at home
+   next to the rest of the app instead of falling back to browser chrome. */
+
+button {
+  padding: 0.5rem 1rem;
+  background: #e2b96f;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover { background: #f0ce8a; }
+
+button:disabled {
+  background: #44445a;
+  color: #888;
+  cursor: not-allowed;
+}
+
+input, select, textarea {
+  padding: 0.5rem 0.75rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #e2b96f;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th {
+  color: #e2b96f;
+  text-align: left;
+}
+
+td, th {
+  padding: 0.5rem;
+}
+
 /* ── Status ───────────────────────────────────────────── */
 
 .status {
@@ -99,10 +157,12 @@ a {
   border-radius: 8px;
   padding: 1.5rem 1rem;
   text-align: center;
+  text-transform: capitalize;
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
+  display: block;
 }
 
 .filter-tile:hover {

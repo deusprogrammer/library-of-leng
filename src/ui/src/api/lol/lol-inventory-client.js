@@ -15,12 +15,24 @@ export const getShopInventoryItem = async (shopId, inventoryId) => {
 }
 
 export const getShopInventoryBatch = async (shopId, batchObject) => {
-    const shopInventory = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/search/batch`, {
+    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/search/batch`, {
         method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify(batchObject)
     });
 
-    return await shopInventory.json();
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+
+        throw new Error(
+            error?.message ??
+            `Failed to search inventory: ${response.status}`
+        );
+    }
+
+    return await response.json();
 }
 
 export const searchInventory = async ({
