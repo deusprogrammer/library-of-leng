@@ -1,5 +1,13 @@
 terraform {
-  required_version = ">= 1.6"
+  required_version = ">= 1.10"
+
+  backend "s3" {
+    bucket       = "library-of-leng-tfstate-309903600513"
+    key          = "library-of-leng/inf/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
+  }
 
   required_providers {
     aws = {
