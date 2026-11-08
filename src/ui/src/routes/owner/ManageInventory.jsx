@@ -134,6 +134,7 @@ const ManageInventory = () => {
                 : inventory.length === 0
                     ? <div>No inventory yet.</div>
                     : (
+                        <div className="table-scroll">
                         <table style={{ borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr>
@@ -173,6 +174,7 @@ const ManageInventory = () => {
                                     ))}
                             </tbody>
                         </table>
+                        </div>
                     )}
         </div>
     );

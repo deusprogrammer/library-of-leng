@@ -54,6 +54,7 @@ const ShopCarts = () => {
                             {cart.items.length === 0
                                 ? <div>Cart is empty.</div>
                                 : (
+                                    <div className="table-scroll">
                                     <table style={{ borderCollapse: 'collapse', marginTop: '10px' }}>
                                         <thead>
                                             <tr>
@@ -74,6 +75,7 @@ const ShopCarts = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                    </div>
                                 )}
                         </div>
                     ))}

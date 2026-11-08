@@ -94,9 +94,11 @@ const Cart = () => {
 
             {items.length > 0 ? (
                 <>
+                    <div className="table-scroll">
                     <table
                         style={{
-                            width: '60%',
+                            width: '100%',
+                            maxWidth: '600px',
                             margin: '20px auto',
                             borderCollapse: 'collapse'
                         }}
@@ -172,8 +174,9 @@ const Cart = () => {
                             </tr>
                         </tfoot>
                     </table>
+                    </div>
 
-                    <p style={{ width: '60%', margin: '20px auto' }}>
+                    <p style={{ width: '100%', maxWidth: '600px', margin: '20px auto' }}>
                         To checkout, come to the register and give them your cart
                         name: <strong>{cartMeta?.slug}</strong>.
                     </p>

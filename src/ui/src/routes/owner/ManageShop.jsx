@@ -14,7 +14,7 @@ const ManageShop = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', margin: '10px' }}>
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '15px' }}>
+            <div className="owner-nav">
                 <Link to="/owner">&lt; My Shops</Link>
                 <Link to={`/owner/shops/${shopId}`}>Inventory</Link>
                 <Link to={`/owner/shops/${shopId}/carts`}>Carts</Link>

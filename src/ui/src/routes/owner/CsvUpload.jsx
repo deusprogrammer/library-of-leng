@@ -102,6 +102,7 @@ const CsvUpload = () => {
                         Parsed <b>{items.length}</b> row(s) from <b>{fileName}</b>
                         {" "}({items.reduce((total, item) => total + item.quantity, 0)} total cards).
                     </div>
+                    <div className="table-scroll">
                     <table style={{ borderCollapse: 'collapse' }}>
                         <thead>
                             <tr>
@@ -122,6 +123,7 @@ const CsvUpload = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                     {items.length > 10 && <div>...and {items.length - 10} more.</div>}
                     <button onClick={onUpload}>Upload {items.length} row(s)</button>
                 </>

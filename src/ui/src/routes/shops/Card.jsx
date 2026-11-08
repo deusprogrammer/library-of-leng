@@ -29,25 +29,13 @@ const Card = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {scryfallData && <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+            {scryfallData && <div className="card-detail">
                 <img
                     src={scryfallData.image_uris?.large}
                     alt={scryfallData.name}
-                    style={{
-                        maxWidth: '320px',
-                        borderRadius: '12px'
-                    }}
                 />
 
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '20px',
-                        maxWidth: '600px',
-                        textAlign: 'left'
-                    }}
-                >
+                <div className="card-detail-info">
                     <div>
                         <h2>{scryfallData.name}</h2>
                         <div>{scryfallData.type_line}</div>

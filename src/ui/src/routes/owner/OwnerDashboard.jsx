@@ -80,6 +80,7 @@ const OwnerDashboard = () => {
                 : shops.length === 0
                     ? <div>You don't own any shops yet. Create one above!</div>
                     : (
+                        <div className="table-scroll">
                         <table style={{ borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr>
@@ -101,6 +102,7 @@ const OwnerDashboard = () => {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     )}
         </div>
     );

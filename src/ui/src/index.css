@@ -74,6 +74,81 @@ td, th {
   padding: 0.5rem;
 }
 
+/* ── Layout helpers ───────────────────────────────────── */
+
+.app-header {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+}
+
+.owner-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+/* Lets wide tables scroll horizontally on narrow viewports instead of
+   squeezing columns unreadable or overflowing the page. Setting
+   display:block/overflow directly on <table> doesn't reliably scroll
+   since its row/cell children keep participating in table layout, so
+   wrap the table in this container instead. */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.card-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.card-detail img {
+  max-width: 320px;
+  width: 100%;
+  border-radius: 12px;
+}
+
+.card-detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 600px;
+  min-width: 260px;
+  flex: 1;
+  text-align: left;
+}
+
+/* ── Mobile ───────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  body {
+    padding: 1rem;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table-scroll table {
+    white-space: nowrap;
+  }
+
+  .card-detail img {
+    max-width: 260px;
+    margin: 0 auto;
+  }
+}
+
 /* ── Status ───────────────────────────────────────────── */
 
 .status {
