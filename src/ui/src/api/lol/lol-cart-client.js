@@ -78,9 +78,11 @@ export const addToCart = async (shopId, inventoryId, quantity = 1) => {
         }
     });
 
-    if (response.status !== 204) {
-        console.error("Failed to add to cart");
-        throw new Error("Failed to add item to cart");
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+
+        console.error("Failed to add to cart", error);
+        throw new Error(error?.message ?? "Failed to add item to cart");
     }
 
     return response.json();

@@ -283,7 +283,7 @@ export const addToCart = async (event) => {
             throw error;
         }
 
-        return jsonResponse(204, {
+        return jsonResponse(200, {
             cartId: cartMeta.cartId,
             slug: cartMeta.slug,
             item: result.Attributes

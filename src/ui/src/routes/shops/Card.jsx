@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getShopInventoryItem } from '../../api/lol/lol-inventory-client';
 import { getPrice, getScryfallCard } from '../../api/scryfall/scry-client';
-import { addToCart } from '../../api/lol/lol-cart-client';
+import { addToCart, getCart } from '../../api/lol/lol-cart-client';
 import { useAtom } from 'jotai';
 import { cartAtom } from '../../atoms/CartAtom';
 import ManaLoader from '../../component/ManaLoader';
@@ -11,6 +11,8 @@ const Card = () => {
     const [card, setCard] = useState({});
     const [scryfallData, setScryfallData] = useState();
     const [cart, setCart] = useAtom(cartAtom);
+    const [adding, setAdding] = useState(false);
+    const [addError, setAddError] = useState(null);
     const { shopId, inventoryId } = useParams();
 
     useEffect(() => {
@@ -22,6 +24,23 @@ const Card = () => {
             setScryfallData(scryfallRes);
         })();
     }, []);
+
+    const handleAddToCart = async () => {
+        setAdding(true);
+        setAddError(null);
+
+        try {
+            await addToCart(shopId, inventoryId);
+            // Re-fetch from the server rather than guessing at the new
+            // state locally, so the cart badge/count stays accurate.
+            setCart(await getCart(shopId));
+        } catch (err) {
+            console.error(err);
+            setAddError(err.message);
+        } finally {
+            setAdding(false);
+        }
+    };
 
     if (!scryfallData) {
         return <ManaLoader />;
@@ -50,10 +69,11 @@ const Card = () => {
                         {`$${getPrice(scryfallData)}`}
                     </div>
 
-                    <button onClick={() => {
-                        const cartItem = addToCart(shopId, inventoryId);
-                        setCart({ items: [...cart.items, cartItem] });
-                    }}>Add to Cart</button>
+                    {addError && <div className="status error">{addError}</div>}
+
+                    <button onClick={handleAddToCart} disabled={adding}>
+                        {adding ? "Adding..." : "Add to Cart"}
+                    </button>
                 </div>
             </div>}
         </div>
