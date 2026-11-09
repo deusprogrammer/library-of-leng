@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { getLoginUrl, isShopOwner } from '../api/auth';
-import splashImage from '../../assets/library-of-leng-splash.png';
+import splashImage from '../../assets/library-of-leng-splash.jpg';
 
 const SplashPage = () => {
     const { user } = useAuth();
