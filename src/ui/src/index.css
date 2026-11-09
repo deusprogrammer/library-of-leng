@@ -149,6 +149,28 @@ td, th {
   }
 }
 
+/* ── Splash page ──────────────────────────────────────── */
+
+.splash-hero {
+  width: 100%;
+  max-width: 900px;
+  border-radius: 16px;
+  display: block;
+  box-shadow: 0 0 40px rgba(226, 185, 111, 0.25);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Status ───────────────────────────────────────────── */
 
 .status {
