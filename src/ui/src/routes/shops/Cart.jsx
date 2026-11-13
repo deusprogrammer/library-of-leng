@@ -2,9 +2,23 @@ import { useAtom } from 'jotai';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { cartAtom } from '../../atoms/CartAtom';
-import { getStoreCartMeta } from '../../api/lol/lol-cart-client';
+import { getCart, getStoreCartMeta, removeFromCart } from '../../api/lol/lol-cart-client';
 import { getScryfallCollection } from '../../api/scryfall/scry-client';
 import ManaLoader from '../../component/ManaLoader';
+
+// Minimal inline trash-can icon so the component has no icon-library
+// dependency.
+const TrashIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+            d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-.8 12.1a2 2 0 0 1-2 1.9H9.8a2 2 0 0 1-2-1.9L7 7h10Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
 
 const getPrice = (scryfallCard) => {
     if (!scryfallCard?.prices) {
@@ -30,10 +44,12 @@ const getPrice = (scryfallCard) => {
 };
 
 const Cart = () => {
-    const [cart] = useAtom(cartAtom);
+    const [cart, setCart] = useAtom(cartAtom);
     const [cartMeta, setCartMeta] = useState({});
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [removingId, setRemovingId] = useState(null);
+    const [error, setError] = useState(null);
 
     const { shopId } = useParams();
 
@@ -72,6 +88,21 @@ const Cart = () => {
 
         loadCartPrices();
     }, [cart, shopId]);
+
+    const handleRemove = async (inventoryId) => {
+        setRemovingId(inventoryId);
+        setError(null);
+
+        try {
+            await removeFromCart(shopId, inventoryId);
+            setCart(await getCart(shopId));
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
+        } finally {
+            setRemovingId(null);
+        }
+    };
 
     const total = items.reduce(
         (sum, item) => sum + item.price * item.quantity,
@@ -155,6 +186,18 @@ const Cart = () => {
                                     >
                                         ${(item.price * item.quantity).toFixed(2)}
                                     </td>
+
+                                    <td style={{ width: '1%', whiteSpace: 'nowrap' }}>
+                                        <button
+                                            onClick={() => handleRemove(item.inventoryId)}
+                                            disabled={removingId === item.inventoryId}
+                                            aria-label={`Remove ${item.name} from cart`}
+                                            title="Remove from cart"
+                                            className="icon-button"
+                                        >
+                                            <TrashIcon />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -171,10 +214,14 @@ const Cart = () => {
                                 <td style={{ fontWeight: 'bold' }}>
                                     ${total.toFixed(2)}
                                 </td>
+
+                                <td></td>
                             </tr>
                         </tfoot>
                     </table>
                     </div>
+
+                    {error && <div className="status error" style={{ marginTop: 0 }}>{error}</div>}
 
                     <p style={{ width: '100%', maxWidth: '600px', margin: '20px auto' }}>
                         To checkout, come to the register and give them your cart

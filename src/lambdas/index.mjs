@@ -1,6 +1,6 @@
 import { getShop, getShops, getMyShops, createShop } from "./handlers/shop.mjs";
 import { getInventory, getInventoryItem, addInventory, getInventoryBatch, addBatchInventory } from "./handlers/inventory.mjs";
-import { getCart, createCart, addToCart, listCarts } from "./handlers/cart.mjs";
+import { getCart, createCart, addToCart, removeFromCart, listCarts } from "./handlers/cart.mjs";
 
 export {
     getShop,
@@ -15,5 +15,6 @@ export {
     getCart,
     createCart,
     addToCart,
+    removeFromCart,
     listCarts
 }

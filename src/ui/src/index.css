@@ -40,6 +40,24 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  color: #e05555;
+}
+
+.icon-button:hover { background: rgba(224, 85, 85, 0.15); }
+
+.icon-button:disabled {
+  background: transparent;
+  color: #555;
+}
+
 input, select, textarea {
   padding: 0.5rem 0.75rem;
   background: #16213e;

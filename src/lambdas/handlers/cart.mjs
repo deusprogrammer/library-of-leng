@@ -1,6 +1,6 @@
 import { randomUUID, createHash } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, DeleteCommand, GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { generateCartSlug, getCartById } from "../utils/cart.mjs";
 import { getShopId, authorizeShopAccess } from "../utils/shop.mjs";
 import { getCartMetaBySlug } from "../utils/cart.mjs";
@@ -292,6 +292,68 @@ export const addToCart = async (event) => {
         return jsonResponse(
             500,
             { message: "Failed to add inventory item to cart." },
+            error
+        );
+    }
+};
+
+export const removeFromCart = async (event) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const cartSlug = event.pathParameters?.cartSlug;
+        const inventoryId = event.pathParameters?.inventoryId;
+
+        if (!identifier || !cartSlug || !inventoryId) {
+            return jsonResponse(400, {
+                message: "Shop identifier, cart slug, and inventory id are required."
+            });
+        }
+
+        const shopId = await getShopId(identifier);
+
+        if (!shopId) {
+            return jsonResponse(404, {
+                message: "Shop not found."
+            });
+        }
+
+        const cartMeta = await getCartMetaBySlug(shopId, cartSlug);
+
+        if (!cartMeta) {
+            return jsonResponse(404, {
+                message: "Cart not found."
+            });
+        }
+
+        const cartToken = event.headers["x-cart-token"];
+
+        if (!cartToken) {
+            return jsonResponse(401, {
+                message: "Unauthorized"
+            });
+        }
+
+        if (cartToken !== cartMeta.tokenHash) {
+            return jsonResponse(403, {
+                message: "Forbidden"
+            });
+        }
+
+        await documentClient.send(
+            new DeleteCommand({
+                TableName: cartTableName,
+                Key: {
+                    cartId: cartMeta.cartId,
+                    itemKey: `ITEM#${inventoryId}`
+                }
+            })
+        );
+
+        return jsonResponse(200, { removed: true, inventoryId });
+    } catch (error) {
+        return jsonResponse(
+            500,
+            { message: "Failed to remove item from cart." },
             error
         );
     }

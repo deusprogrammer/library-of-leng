@@ -87,3 +87,22 @@ export const addToCart = async (shopId, inventoryId, quantity = 1) => {
 
     return response.json();
 }
+
+export const removeFromCart = async (shopId, inventoryId) => {
+    const cartMeta = getStoreCartMeta(shopId);
+    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}/items/${encodeURIComponent(inventoryId)}`, {
+        method: "DELETE",
+        headers: {
+            "x-cart-token": await sha256(cartMeta.token)
+        }
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+
+        console.error("Failed to remove from cart", error);
+        throw new Error(error?.message ?? "Failed to remove item from cart");
+    }
+
+    return response.json();
+}
