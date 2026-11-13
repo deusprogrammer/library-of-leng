@@ -15,6 +15,8 @@ const Shop = () => {
     const navigate   = useNavigate();
 
     useEffect(() => {
+        setLoading(true);
+
         (async () => {
             const shopData = await getShop(shopId);
             const cartData = await getCart(shopId);
@@ -22,7 +24,7 @@ const Shop = () => {
             setCart(cartData);
             setLoading(false);
         })();
-    }, []);
+    }, [shopId]);
 
     if (loading) {
         return <ManaLoader />;
