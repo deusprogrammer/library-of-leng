@@ -337,6 +337,18 @@ td, th {
   font-family: monospace;
 }
 
+/* Must come after the tile rules above so it overrides their grid columns. */
+@media (max-width: 640px) {
+  .filter-list,
+  .option-list {
+    grid-template-columns: 1fr;
+  }
+
+  .set-search {
+    max-width: none;
+  }
+}
+
 /* ── Mana loader interstitial ─────────────────────────── */
 
 .loading-screen {
