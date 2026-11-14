@@ -563,6 +563,47 @@ locals {
       }
     }
 
+    update_cart_item = {
+      handler   = "index.updateCartItem"
+      route_key = "PUT /shops/{identifier}/carts/{cartSlug}/items/{inventoryId}"
+
+      dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query",
+            "dynamodb:UpdateItem"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
     create_cart = {
       handler   = "index.createCart"
       route_key = "POST /shops/{identifier}/carts"

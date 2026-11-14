@@ -361,6 +361,101 @@ export const removeFromCart = async (event) => {
     }
 };
 
+// Sets (rather than increments) the quantity of a line already in the cart,
+// so the kiosk can raise or lower it. Removal still goes through removeFromCart.
+export const updateCartItem = async (event) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const cartSlug = event.pathParameters?.cartSlug;
+        const inventoryId = event.pathParameters?.inventoryId;
+
+        if (!identifier || !cartSlug || !inventoryId) {
+            return jsonResponse(400, {
+                message: "Shop identifier, cart slug, and inventory id are required."
+            });
+        }
+
+        let quantity;
+
+        try {
+            ({ quantity } = JSON.parse(event.body ?? "{}"));
+        } catch (error) {
+            return jsonResponse(400, { message: "Request body must contain valid JSON." }, error);
+        }
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            return jsonResponse(400, {
+                message: "quantity must be a positive integer."
+            });
+        }
+
+        const shopId = await getShopId(identifier);
+
+        if (typeof shopId !== "string") {
+            return shopId ?? jsonResponse(404, { message: "Shop not found." });
+        }
+
+        const cartMeta = await getCartMetaBySlug(shopId, cartSlug);
+
+        if (!cartMeta) {
+            return jsonResponse(404, { message: "Cart not found." });
+        }
+
+        const cartToken = event.headers["x-cart-token"];
+
+        if (!cartToken) {
+            return jsonResponse(401, { message: "Unauthorized" });
+        }
+
+        if (cartToken !== cartMeta.tokenHash) {
+            return jsonResponse(403, { message: "Forbidden" });
+        }
+
+        const inventoryItem = (await documentClient.send(new GetCommand({
+            TableName: inventoryTableName,
+            Key: { shopId, inventoryId }
+        }))).Item;
+
+        if (!inventoryItem) {
+            return jsonResponse(404, { message: "Inventory item not found." });
+        }
+
+        if (quantity > inventoryItem.quantity) {
+            return jsonResponse(409, {
+                message: `Only ${inventoryItem.quantity} of this item are currently available.`
+            });
+        }
+
+        try {
+            const result = await documentClient.send(new UpdateCommand({
+                TableName: cartTableName,
+                Key: {
+                    cartId: cartMeta.cartId,
+                    itemKey: `ITEM#${inventoryId}`
+                },
+                UpdateExpression: "SET quantity = :quantity",
+                ConditionExpression: "attribute_exists(itemKey)",
+                ExpressionAttributeValues: { ":quantity": quantity },
+                ReturnValues: "ALL_NEW"
+            }));
+
+            return jsonResponse(200, {
+                cartId: cartMeta.cartId,
+                slug: cartMeta.slug,
+                item: result.Attributes
+            });
+        } catch (error) {
+            if (error.name === "ConditionalCheckFailedException") {
+                return jsonResponse(404, { message: "That item is not in the cart." });
+            }
+
+            throw error;
+        }
+    } catch (error) {
+        return jsonResponse(500, { message: "Failed to update cart item." }, error);
+    }
+};
+
 export const createCart = async (event) => {
     try {
         const identifier = event.pathParameters?.identifier;

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getShopInventoryItem } from '../../api/lol/lol-inventory-client';
 import { getPrice, getScryfallCard } from '../../api/scryfall/scry-client';
-import { addToCart, getCart } from '../../api/lol/lol-cart-client';
+import { addToCart, getCart, updateCartItemQuantity } from '../../api/lol/lol-cart-client';
 import { useAtom } from 'jotai';
-import { cartAtom } from '../../atoms/CartAtom';
+import { cartAtom, getCartQuantity } from '../../atoms/CartAtom';
 import ManaLoader from '../../component/ManaLoader';
 
 const Card = () => {
@@ -25,12 +25,15 @@ const Card = () => {
         })();
     }, []);
 
-    const handleAddToCart = async () => {
+    const cartQuantity = getCartQuantity(cart, inventoryId);
+    const available = Number(card.quantity ?? 0);
+
+    const runCartUpdate = async (update) => {
         setAdding(true);
         setAddError(null);
 
         try {
-            await addToCart(shopId, inventoryId);
+            await update();
             // Re-fetch from the server rather than guessing at the new
             // state locally, so the cart badge/count stays accurate.
             setCart(await getCart(shopId));
@@ -41,6 +44,11 @@ const Card = () => {
             setAdding(false);
         }
     };
+
+    const handleAddToCart = () => runCartUpdate(() => addToCart(shopId, inventoryId));
+    const setCartQuantity = (quantity) => runCartUpdate(
+        () => updateCartItemQuantity(shopId, inventoryId, quantity)
+    );
 
     if (!scryfallData) {
         return <ManaLoader />;
@@ -71,9 +79,40 @@ const Card = () => {
 
                     {addError && <div className="status error">{addError}</div>}
 
-                    <button onClick={handleAddToCart} disabled={adding}>
-                        {adding ? "Adding..." : "Add to Cart"}
-                    </button>
+                    {cartQuantity > 0 ? (
+                        <>
+                            <button disabled>Already In Cart</button>
+                            {available > 1 && (
+                                <div className="cart-quantity">
+                                    <span>Quantity in cart</span>
+                                    <div className="quantity-stepper">
+                                        <button
+                                            type="button"
+                                            aria-label="Decrease quantity"
+                                            disabled={adding || cartQuantity <= 1}
+                                            onClick={() => setCartQuantity(cartQuantity - 1)}
+                                        >
+                                            −
+                                        </button>
+                                        <span className="quantity-value" aria-live="polite">{cartQuantity}</span>
+                                        <button
+                                            type="button"
+                                            aria-label="Increase quantity"
+                                            disabled={adding || cartQuantity >= available}
+                                            onClick={() => setCartQuantity(cartQuantity + 1)}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <span className="quantity-available">{available} available</span>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <button onClick={handleAddToCart} disabled={adding}>
+                            {adding ? "Adding..." : "Add to Cart"}
+                        </button>
+                    )}
                 </div>
             </div>}
         </div>

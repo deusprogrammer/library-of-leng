@@ -27,3 +27,4 @@ export const getCart = withDeviceAccess(cartHandlers.getCart);
 export const createCart = withDeviceAccess(cartHandlers.createCart);
 export const addToCart = withDeviceAccess(cartHandlers.addToCart);
 export const removeFromCart = withDeviceAccess(cartHandlers.removeFromCart);
+export const updateCartItem = withDeviceAccess(cartHandlers.updateCartItem);

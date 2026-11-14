@@ -108,3 +108,23 @@ export const removeFromCart = async (shopId, inventoryId) => {
 
     return response.json();
 }
+export const updateCartItemQuantity = async (shopId, inventoryId, quantity) => {
+    const cartMeta = getStoreCartMeta(shopId);
+    const response = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}/items/${encodeURIComponent(inventoryId)}`, {
+        method: "PUT",
+        body: JSON.stringify({ quantity }),
+        headers: {
+            "Content-Type": "application/json",
+            "x-cart-token": await sha256(cartMeta.token)
+        }
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => null);
+
+        console.error("Failed to update cart item", error);
+        throw new Error(error?.message ?? "Failed to update cart quantity");
+    }
+
+    return response.json();
+}
