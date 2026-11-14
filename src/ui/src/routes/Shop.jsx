@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { getShop } from '../api/lol/lol-shop-client';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useParams } from 'react-router-dom';
 import { getCart } from '../api/lol/lol-cart-client';
 import { cartAtom } from '../atoms/CartAtom';
-import { useAtom } from 'jotai';
+import { useSetAtom } from 'jotai';
 import ManaLoader from '../component/ManaLoader';
 
 const Shop = () => {
     const [shop, setShop] = useState({});
     const [loading, setLoading] = useState(true);
-    const [cart, setCart] = useAtom(cartAtom);
+    const setCart = useSetAtom(cartAtom);
 
     const { shopId } = useParams();
-    const navigate   = useNavigate();
 
     useEffect(() => {
         setLoading(true);
@@ -32,12 +31,7 @@ const Shop = () => {
 
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
-            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-                <div onClick={() => navigate(-1)}>&lt;Back</div>
-                <div><Link to={`/shops/${shopId}`}>Home</Link></div>
-                <div><Link to={`/shops/${shopId}/cart`}>Cart{cart?.items?.length ? `[${cart?.items?.length}]` : null}</Link></div>
-            </div>
-            <div style={{ textAlign: 'center'}}>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                 <h1>{shop.name}</h1>
             </div>
             <Outlet />

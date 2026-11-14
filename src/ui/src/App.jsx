@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import SplashPage from './routes/SplashPage'
 import Shop from './routes/Shop'
 import Cards from './routes/shops/Cards'
@@ -15,27 +15,15 @@ import ManageInventory from './routes/owner/ManageInventory'
 import ShopCarts from './routes/owner/ShopCarts'
 import CsvUpload from './routes/owner/CsvUpload'
 import RequireOwner from './component/RequireOwner'
+import NavBar from './component/NavBar'
 import useAuth from './hooks/useAuth'
-import { getLoginUrl, isShopOwner, logout } from './api/auth'
 
 export default function App() {
   const { user } = useAuth();
 
   return (
     <BrowserRouter>
-      <div className="app-header">
-        <div>
-          {user?.email
-            ? `Logged in as ${user.email} (${(user['cognito:groups'] ?? []).join(', ')})`
-            : null}
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          {user && isShopOwner() && <Link to="/owner">My Shops</Link>}
-          {user
-            ? <a href="#" onClick={(e) => { e.preventDefault(); logout(); }}>Logout</a>
-            : <a href={getLoginUrl()}>Login</a>}
-        </div>
-      </div>
+      <NavBar user={user} />
       <Routes>
         <Route path="/" element={<SplashPage />} />
         <Route path="/shops/:shopId" element={<Shop />}>
