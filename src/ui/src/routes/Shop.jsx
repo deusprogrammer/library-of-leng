@@ -17,11 +17,16 @@ const Shop = () => {
         setLoading(true);
 
         (async () => {
-            const shopData = await getShop(shopId);
-            const cartData = await getCart(shopId);
-            setShop(shopData);
-            setCart(cartData);
-            setLoading(false);
+            try {
+                const shopData = await getShop(shopId);
+                const cartData = await getCart(shopId);
+                setShop(shopData);
+                setCart(cartData);
+                setLoading(false);
+            } catch (err) {
+                // Auth failures are routed to the 403 page by deviceFetch.
+                console.error(err);
+            }
         })();
     }, [shopId]);
 

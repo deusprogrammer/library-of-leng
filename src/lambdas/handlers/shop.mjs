@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { jsonResponse } from "../utils/util.mjs";
 import { isUUID, slugify } from "../utils/shop.mjs";
 import { getUserId, hasAnyGroup } from "../utils/auth.mjs";
@@ -48,22 +48,6 @@ export const createShop = async (event, context) => {
     }
 
     return jsonResponse(201, shop);
-}
-
-export const getShops = async (event, context) => {
-    let shops;
-
-    try {
-        shops = (await documentClient.send(new ScanCommand(
-            {
-                TableName: shopTableName,
-            }
-        )))?.Items;
-    } catch (err) {
-        return jsonResponse(500, { message: "Failed to retrieve shops" }, err);
-    }
-
-    return jsonResponse(200, shops);
 }
 
 export const getMyShops = async (event, context) => {

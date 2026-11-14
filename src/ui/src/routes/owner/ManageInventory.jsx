@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getShopInventory } from '../../api/lol/lol-inventory-client';
-import { addBatchInventory, adjustInventory } from '../../api/lol/lol-owner-client';
+import { addBatchInventory, adjustInventory, getMyShopInventory } from '../../api/lol/lol-owner-client';
 import ManaLoader from '../../component/ManaLoader';
 
 const ManageInventory = () => {
@@ -21,7 +20,7 @@ const ManageInventory = () => {
         setLoading(true);
 
         try {
-            const inventoryData = await getShopInventory(shopId);
+            const inventoryData = await getMyShopInventory(shopId);
             setInventory(Array.isArray(inventoryData) ? inventoryData : []);
         } catch (err) {
             console.error(err);

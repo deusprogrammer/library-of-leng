@@ -63,3 +63,35 @@ export const addBatchInventory = async (shopId, items) => {
 
     return asJson(response, "Failed to upload inventory batch");
 };
+
+export const getMyShop = async (shopId) => {
+    const response = await authFetch(`${API_URL}my/shops/${encodeURIComponent(shopId)}`, {
+        method: "GET"
+    });
+
+    return asJson(response, "Failed to retrieve shop");
+};
+
+export const getMyShopInventory = async (shopId) => {
+    const response = await authFetch(`${API_URL}my/shops/${encodeURIComponent(shopId)}/inventory`, {
+        method: "GET"
+    });
+
+    return asJson(response, "Failed to retrieve inventory");
+};
+
+export const createRegistrationInvite = async (shopId) => {
+    const response = await authFetch(`${API_URL}shops/${encodeURIComponent(shopId)}/registrations`, {
+        method: "POST"
+    });
+
+    return asJson(response, "Failed to create a device pairing code");
+};
+
+export const getRegisteredDevices = async (shopId) => {
+    const response = await authFetch(`${API_URL}shops/${encodeURIComponent(shopId)}/devices`, {
+        method: "GET"
+    });
+
+    return asJson(response, "Failed to retrieve registered devices");
+};

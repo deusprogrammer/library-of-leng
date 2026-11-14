@@ -1,5 +1,7 @@
+import { deviceFetch } from "./lol-device-client";
+
 export const getShopInventory = async (shopId) => {
-    const shopInventory = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/inventory`, {
+    const shopInventory = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/inventory`, {
         method: "GET"
     });
 
@@ -7,7 +9,7 @@ export const getShopInventory = async (shopId) => {
 }
 
 export const getShopInventoryItem = async (shopId, inventoryId) => {
-    const shopInventory = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/inventory/${encodeURIComponent(inventoryId)}`, {
+    const shopInventory = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/inventory/${encodeURIComponent(inventoryId)}`, {
         method: "GET"
     });
 
@@ -15,7 +17,7 @@ export const getShopInventoryItem = async (shopId, inventoryId) => {
 }
 
 export const getShopInventoryBatch = async (shopId, batchObject) => {
-    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/search/batch`, {
+    const response = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/search/batch`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -52,7 +54,7 @@ export const searchInventory = async ({
         query ? `?${query}` : ""
     }`;
 
-    const response = await fetch(url);
+    const response = await deviceFetch(identifier, url);
 
     if (!response.ok) {
         const error = await response.json().catch(() => null);

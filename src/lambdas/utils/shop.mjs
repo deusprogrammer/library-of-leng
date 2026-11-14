@@ -104,3 +104,18 @@ export const authorizeShopAccess = async (event, identifier) => {
 
     return { shop };
 };
+
+/**
+ * Wraps a shop-scoped handler so it only runs for the shop's owner (or an
+ * admin), as identified by the Cognito JWT authorizer.
+ */
+export const withShopOwner = (handler) => async (event, context) => {
+    const { errorResponse } = await authorizeShopAccess(
+        event,
+        event.pathParameters?.identifier
+    );
+
+    if (errorResponse) return errorResponse;
+
+    return handler(event, context);
+};

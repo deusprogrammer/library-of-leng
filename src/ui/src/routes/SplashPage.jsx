@@ -28,16 +28,15 @@ const SplashPage = () => {
             />
 
             <p style={{ maxWidth: '640px', margin: 0 }}>
-                Looking for a store? Each participating shop has a QR code posted
-                at the register or front counter — scan it with your phone's
-                camera to jump straight to that store's kiosk, browse their
-                inventory, and build a cart to check out with.
+                Looking for a card? Head to the shop&rsquo;s in-store kiosk to
+                browse their inventory, search for cards or paste in a Moxfield
+                decklist, and build a cart to check out with at the counter.
             </p>
 
             <p style={{ maxWidth: '640px', margin: 0 }}>
                 {user && isShopOwner()
                     ? <>Welcome back! Head to <Link to="/owner">My Shops</Link> to create or manage your shops.</>
-                    : <>Are you a shop owner? <a href={getLoginUrl()}>Log in</a> to create and manage your shops, update inventory, and view customer carts.</>}
+                    : <>Are you a shop owner? <a href={getLoginUrl()}>Log in</a> to create and manage your shops, update inventory, view customer carts, and register kiosk devices.</>}
             </p>
         </div>
     );

@@ -14,6 +14,9 @@ import ManageShop from './routes/owner/ManageShop'
 import ManageInventory from './routes/owner/ManageInventory'
 import ShopCarts from './routes/owner/ShopCarts'
 import CsvUpload from './routes/owner/CsvUpload'
+import RegisterDevice from './routes/owner/RegisterDevice'
+import DeviceRegistration from './routes/DeviceRegistration'
+import { DeviceForbiddenRedirect, Forbidden } from './routes/Forbidden'
 import RequireOwner from './component/RequireOwner'
 import NavBar from './component/NavBar'
 import useAuth from './hooks/useAuth'
@@ -24,6 +27,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <NavBar user={user} />
+      <DeviceForbiddenRedirect />
       <Routes>
         <Route path="/" element={<SplashPage />} />
         <Route path="/shops/:shopId" element={<Shop />}>
@@ -42,7 +46,10 @@ export default function App() {
           <Route index element={<ManageInventory />} />
           <Route path="carts" element={<ShopCarts />} />
           <Route path="upload" element={<CsvUpload />} />
+          <Route path="devices/register" element={<RegisterDevice />} />
         </Route>
+        <Route path="/register/:shopId" element={<DeviceRegistration />} />
+        <Route path="/forbidden" element={<Forbidden />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
       </Routes>
     </BrowserRouter>

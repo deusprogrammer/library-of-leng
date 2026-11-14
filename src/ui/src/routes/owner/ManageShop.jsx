@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useParams } from 'react-router-dom';
-import { getShop } from '../../api/lol/lol-shop-client';
+import { getMyShop } from '../../api/lol/lol-owner-client';
 
 const ManageShop = () => {
     const [shop, setShop] = useState({});
@@ -8,7 +8,11 @@ const ManageShop = () => {
 
     useEffect(() => {
         (async () => {
-            setShop(await getShop(shopId));
+            try {
+                setShop(await getMyShop(shopId));
+            } catch (err) {
+                console.error(err);
+            }
         })();
     }, [shopId]);
 
@@ -20,11 +24,12 @@ const ManageShop = () => {
                 <Link to={`/owner/shops/${shopId}/carts`}>Carts</Link>
                 <Link to={`/owner/shops/${shopId}/upload`}>CSV Upload</Link>
                 <Link to={`/shops/${shop.slug ?? shopId}`}>View Storefront</Link>
+                <Link className="owner-nav-button" to={`/owner/shops/${shopId}/devices/register`}>Register Device</Link>
             </div>
             <div style={{ textAlign: 'center' }}>
                 <h1>{shop.name} (Management)</h1>
             </div>
-            <Outlet />
+            <Outlet context={{ shop }} />
         </div>
     );
 };

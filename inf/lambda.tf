@@ -37,9 +37,10 @@ locals {
       }
     }
 
-    get_shop = {
-      handler   = "index.getShop"
-      route_key = "GET /shops/{identifier}"
+    get_my_shop = {
+      handler   = "index.getMyShop"
+      route_key = "GET /my/shops/{identifier}"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
@@ -53,20 +54,55 @@ locals {
       }
     }
 
-    get_shops = {
-      handler   = "index.getShops"
-      route_key = "GET /shops"
+    get_my_shop_inventory = {
+      handler   = "index.getMyShopInventory"
+      route_key = "GET /my/shops/{identifier}/inventory"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
           name = aws_dynamodb_table.shops.name
           arn  = aws_dynamodb_table.shops.arn
           actions = [
-            "dynamodb:Scan"
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:Query"
           ]
         }
       }
     }
+
+    get_shop = {
+      handler   = "index.getShop"
+      route_key = "GET /shops/{identifier}"
+
+      dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
 
     register_device = {
       handler   = "index.registerDevice"
@@ -96,6 +132,7 @@ locals {
     create_registration_invite = {
       handler   = "index.createRegistrationInvite"
       route_key = "POST /shops/{identifier}/registrations"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
@@ -119,6 +156,7 @@ locals {
     get_registered_devices = {
       handler   = "index.getRegisteredDevices"
       route_key = "GET /shops/{identifier}/devices"
+      protected = true
 
       dynamodb_tables = {
         SHOPS_TABLE = {
@@ -196,6 +234,14 @@ locals {
       route_key = "GET /shops/{identifier}/inventory"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         SHOPS_TABLE = {
           name = aws_dynamodb_table.shops.name
           arn  = aws_dynamodb_table.shops.arn
@@ -220,6 +266,14 @@ locals {
       route_key = "POST /shops/{identifier}/search/batch"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         SHOPS_TABLE = {
           name = aws_dynamodb_table.shops.name
           arn  = aws_dynamodb_table.shops.arn
@@ -244,6 +298,14 @@ locals {
       route_key = "GET /shops/{identifier}/inventory/{inventoryId}"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         SHOPS_TABLE = {
           name = aws_dynamodb_table.shops.name
           arn  = aws_dynamodb_table.shops.arn
@@ -293,6 +355,14 @@ locals {
       route_key = "GET /shops/{identifier}/carts/{cartSlug}"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         CARTS_TABLE = {
           name = aws_dynamodb_table.carts.name
           arn  = aws_dynamodb_table.carts.arn
@@ -317,6 +387,14 @@ locals {
       route_key = "POST /shops/{identifier}/carts/{cartSlug}/items"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         CARTS_TABLE = {
           name = aws_dynamodb_table.carts.name
           arn  = aws_dynamodb_table.carts.arn
@@ -350,6 +428,14 @@ locals {
       route_key = "DELETE /shops/{identifier}/carts/{cartSlug}/items/{inventoryId}"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         CARTS_TABLE = {
           name = aws_dynamodb_table.carts.name
           arn  = aws_dynamodb_table.carts.arn
@@ -375,6 +461,14 @@ locals {
       route_key = "POST /shops/{identifier}/carts"
 
       dynamodb_tables = {
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem"
+          ]
+        }
+
         CARTS_TABLE = {
           name = aws_dynamodb_table.carts.name
           arn  = aws_dynamodb_table.carts.arn
@@ -397,10 +491,10 @@ locals {
   }
 }
 
-data "archive_file" "lambda_archive" { 
-    type = "zip" 
-    source_dir = "${path.module}/../src/lambdas" 
-    output_path = "${path.module}/../build/lambda.zip" 
+data "archive_file" "lambda_archive" {
+  type        = "zip"
+  source_dir  = "${path.module}/../src/lambdas"
+  output_path = "${path.module}/../build/lambda.zip"
 }
 
 module "lambdas" {

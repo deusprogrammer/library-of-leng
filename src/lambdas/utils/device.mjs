@@ -48,7 +48,8 @@ export const authorizeDeviceAccess = async (event, identifier) => {
         const registrationKey = match[1];
         const shopId = await getShopId(identifier);
 
-        if (!shopId) {
+        // getShopId returns an error response object instead of an id on failure.
+        if (typeof shopId !== "string") {
             return {
                 errorResponse: jsonResponse(404, {
                     message: "Shop not found."
@@ -99,4 +100,19 @@ export const authorizeDeviceAccess = async (event, identifier) => {
             )
         };
     }
+};
+
+/**
+ * Wraps a shop-scoped handler so it only runs for requests carrying a valid
+ * device registration key for the shop in the {identifier} path parameter.
+ */
+export const withDeviceAccess = (handler) => async (event, context) => {
+    const { errorResponse } = await authorizeDeviceAccess(
+        event,
+        event.pathParameters?.identifier
+    );
+
+    if (errorResponse) return errorResponse;
+
+    return handler(event, context);
 };

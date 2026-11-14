@@ -1,3 +1,5 @@
+import { deviceFetch } from "./lol-device-client";
+
 const sha256 = async (text) => {
     const encoder = new TextEncoder();
     const data = encoder.encode(text);
@@ -30,7 +32,7 @@ export const getStoreCartMeta = (shopId) => {
 export const getCart = async (shopId) => {
     const cartMeta = await createCart(shopId);
     
-    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}`, {
+    const response = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}`, {
         method: "GET",
         headers: {
             "x-cart-token": await sha256(cartMeta.token)
@@ -54,7 +56,7 @@ export const createCart = async (shopId, forceRefresh = false) => {
         return cartData;
     }
 
-    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts`, {
+    const response = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts`, {
         method: "POST"
     });
 
@@ -66,7 +68,7 @@ export const createCart = async (shopId, forceRefresh = false) => {
 
 export const addToCart = async (shopId, inventoryId, quantity = 1) => {
     const cartMeta = getStoreCartMeta(shopId);
-    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}/items`, {
+    const response = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}/items`, {
         method: "POST",
         body: JSON.stringify({
             inventoryId,
@@ -90,7 +92,7 @@ export const addToCart = async (shopId, inventoryId, quantity = 1) => {
 
 export const removeFromCart = async (shopId, inventoryId) => {
     const cartMeta = getStoreCartMeta(shopId);
-    const response = await fetch(`${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}/items/${encodeURIComponent(inventoryId)}`, {
+    const response = await deviceFetch(shopId, `${import.meta.env.VITE_LOL_API_URL}shops/${shopId}/carts/${cartMeta.slug}/items/${encodeURIComponent(inventoryId)}`, {
         method: "DELETE",
         headers: {
             "x-cart-token": await sha256(cartMeta.token)
