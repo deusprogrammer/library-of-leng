@@ -255,6 +255,75 @@ td, th {
 
 .error-text { color: #e05555; }
 
+button.button-secondary {
+  background: transparent;
+  color: #e2b96f;
+  border: 1px solid #e2b96f;
+}
+
+button.button-secondary:hover { background: rgba(226, 185, 111, 0.12); }
+
+button.button-danger { background: #e05555; color: #fff; }
+button.button-danger:hover { background: #ec7070; }
+
+button.button-secondary:disabled,
+button.button-danger:disabled {
+  background: #44445a;
+  border-color: #44445a;
+  color: #888;
+}
+
+/* ── Confirm modal ───────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(8, 8, 20, 0.7);
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  padding: 1.5rem;
+  background: #16213e;
+  border: 1px solid #e2b96f;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 { margin-bottom: 0.75rem; color: #e2b96f; }
+
+.modal-body { display: flex; flex-direction: column; gap: 0.5rem; line-height: 1.45; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+/* ── Owner cart tables & actions ─────────────────────── */
+
+.cart-items-table { border-collapse: collapse; margin-top: 10px; width: 100%; }
+.cart-items-table th,
+.cart-items-table td { padding: 5px; text-align: left; }
+.cart-items-table .numeric { text-align: right; white-space: nowrap; }
+.cart-items-table tfoot td { border-top: 1px solid #0f3460; font-weight: 700; color: #e2b96f; }
+
+.owner-cart-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+.owner-cart-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+
+@media (max-width: 640px) {
+  .owner-cart-buttons button { flex: 1; }
+  .modal-actions button { flex: 1; }
+}
+
 /* ── Registered devices ───────────────────────────────── */
 
 .shop-devices {

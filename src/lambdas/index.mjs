@@ -8,7 +8,7 @@ import { withShopOwner } from "./utils/shop.mjs";
 // Admin endpoints (Cognito-protected in API Gateway).
 export const { getMyShops, createShop } = shopHandlers;
 export const { addInventory, addBatchInventory } = inventoryHandlers;
-export const { listCarts, getDeviceCart } = cartHandlers;
+export const { listCarts, getDeviceCart, clearCart, processCart } = cartHandlers;
 export { createRegistrationInvite, getRegisteredDevices, removeDevice };
 
 // Owner-console reads of kiosk data, gated by Cognito instead of a device key.

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { listShopCarts } from '../../api/lol/lol-owner-client';
 import ManaLoader from '../../component/ManaLoader';
 import CartItemsTable from '../../component/CartItemsTable';
+import OwnerCartActions from '../../component/OwnerCartActions';
 
 const formatTimestamp = (epochSeconds) => {
     if (!epochSeconds) {
@@ -19,18 +20,21 @@ const ShopCarts = () => {
 
     const { shopId } = useParams();
 
-    useEffect(() => {
-        (async () => {
-            try {
-                setCarts(await listShopCarts(shopId));
-            } catch (err) {
-                console.error(err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        })();
+    const loadCarts = useCallback(async () => {
+        try {
+            setCarts(await listShopCarts(shopId));
+            setError(null);
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     }, [shopId]);
+
+    useEffect(() => {
+        loadCarts();
+    }, [loadCarts]);
 
     if (loading) {
         return <ManaLoader />;
@@ -52,7 +56,8 @@ const ShopCarts = () => {
                             <h3>{cart.slug}</h3>
                             <div>Created: {formatTimestamp(cart.createdAt)}</div>
                             <div>Expires: {formatTimestamp(cart.expiresAt)}</div>
-                            <CartItemsTable items={cart.items} />
+                            <CartItemsTable items={cart.items} total={cart.total} showPrices />
+                            <OwnerCartActions shopId={shopId} cart={cart} onChanged={loadCarts} />
                         </div>
                     ))}
         </div>

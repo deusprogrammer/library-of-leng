@@ -111,3 +111,19 @@ export const getDeviceCart = async (shopId, deviceId) => {
 
     return asJson(response, "Failed to retrieve device cart");
 };
+
+export const clearCart = async (shopId, cartSlug) => {
+    const response = await authFetch(`${API_URL}shops/${encodeURIComponent(shopId)}/carts/${encodeURIComponent(cartSlug)}/items`, {
+        method: "DELETE"
+    });
+
+    return asJson(response, "Failed to clear cart");
+};
+
+export const processCart = async (shopId, cartSlug) => {
+    const response = await authFetch(`${API_URL}shops/${encodeURIComponent(shopId)}/carts/${encodeURIComponent(cartSlug)}/process`, {
+        method: "POST"
+    });
+
+    return asJson(response, "Failed to process cart");
+};

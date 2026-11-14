@@ -7,27 +7,29 @@ import { getScryfallCollection } from '../../api/scryfall/scry-client';
 import ManaLoader from '../../component/ManaLoader';
 import TrashIcon from '../../component/TrashIcon';
 
-const getPrice = (scryfallCard) => {
-    if (!scryfallCard?.prices) {
+// Mirrors the owner-side pricing in src/lambdas/utils/pricing.mjs so the
+// kiosk total matches what the shop owner sees.
+const getPrice = (scryfallCard, finish) => {
+    const prices = scryfallCard?.prices;
+
+    if (!prices) {
         return 0;
     }
 
-    if (
-        scryfallCard.finishes?.includes('etched') &&
-        !scryfallCard.finishes?.includes('foil') &&
-        !scryfallCard.finishes?.includes('nonfoil')
-    ) {
-        return Number(scryfallCard.prices.usd_etched ?? 0);
+    const toPrice = (value) => (value === null || value === undefined ? null : Number(value));
+    const usd = toPrice(prices.usd);
+    const foil = toPrice(prices.usd_foil);
+    const etched = toPrice(prices.usd_etched);
+
+    if (finish === 'etched') {
+        return etched ?? foil ?? usd ?? 0;
     }
 
-    if (
-        scryfallCard.finishes?.includes('foil') &&
-        !scryfallCard.finishes?.includes('nonfoil')
-    ) {
-        return Number(scryfallCard.prices.usd_foil ?? 0);
+    if (finish === 'foil') {
+        return foil ?? usd ?? 0;
     }
 
-    return Number(scryfallCard.prices.usd ?? 0);
+    return usd ?? foil ?? etched ?? 0;
 };
 
 const Cart = () => {
@@ -66,7 +68,7 @@ const Cart = () => {
 
                     return {
                         ...item,
-                        price: getPrice(scryfallCard)
+                        price: getPrice(scryfallCard, item.finish)
                     };
                 })
             );

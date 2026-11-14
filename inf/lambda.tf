@@ -398,6 +398,65 @@ locals {
       }
     }
 
+    clear_cart = {
+      handler   = "index.clearCart"
+      route_key = "DELETE /shops/{identifier}/carts/{cartSlug}/items"
+      protected = true
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query",
+            "dynamodb:BatchWriteItem"
+          ]
+        }
+      }
+    }
+
+    process_cart = {
+      handler   = "index.processCart"
+      route_key = "POST /shops/{identifier}/carts/{cartSlug}/process"
+      protected = true
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query",
+            "dynamodb:DeleteItem",
+            "dynamodb:ConditionCheckItem"
+          ]
+        }
+        INVENTORY_TABLE = {
+          name = aws_dynamodb_table.inventory.name
+          arn  = aws_dynamodb_table.inventory.arn
+          actions = [
+            "dynamodb:UpdateItem",
+            "dynamodb:DeleteItem"
+          ]
+        }
+      }
+    }
+
     get_cart = {
       handler   = "index.getCart"
       route_key = "GET /shops/{identifier}/carts/{cartSlug}"

@@ -3,6 +3,7 @@ import { useOutletContext, useParams } from 'react-router-dom';
 import { getDeviceCart, getRegisteredDevices, removeDevice } from '../../api/lol/lol-owner-client';
 import CartItemsTable from '../../component/CartItemsTable';
 import ManaLoader from '../../component/ManaLoader';
+import OwnerCartActions from '../../component/OwnerCartActions';
 import TrashIcon from '../../component/TrashIcon';
 
 const formatTimestamp = (epochSeconds) => {
@@ -16,29 +17,31 @@ const formatTimestamp = (epochSeconds) => {
 const DeviceCart = ({ shopId, deviceId }) => {
     const [state, setState] = useState({ loading: true });
 
+    const loadCart = useCallback(async (isCancelled = () => false) => {
+        try {
+            const cart = await getDeviceCart(shopId, deviceId);
+
+            if (!isCancelled()) {
+                setState({ loading: false, cart });
+            }
+        } catch (err) {
+            console.error(err);
+
+            if (!isCancelled()) {
+                setState({ loading: false, error: err.message });
+            }
+        }
+    }, [shopId, deviceId]);
+
     useEffect(() => {
         let cancelled = false;
 
-        (async () => {
-            try {
-                const cart = await getDeviceCart(shopId, deviceId);
-
-                if (!cancelled) {
-                    setState({ loading: false, cart });
-                }
-            } catch (err) {
-                console.error(err);
-
-                if (!cancelled) {
-                    setState({ loading: false, error: err.message });
-                }
-            }
-        })();
+        loadCart(() => cancelled);
 
         return () => {
             cancelled = true;
         };
-    }, [shopId, deviceId]);
+    }, [loadCart]);
 
     if (state.loading) {
         return <ManaLoader />;
@@ -61,7 +64,8 @@ const DeviceCart = ({ shopId, deviceId }) => {
                 <span>Created: {formatTimestamp(cart.createdAt)}</span>
                 <span>Expires: {formatTimestamp(cart.expiresAt)}</span>
             </div>
-            <CartItemsTable items={cart.items} />
+            <CartItemsTable items={cart.items} total={cart.total} showPrices />
+            <OwnerCartActions shopId={shopId} cart={cart} onChanged={() => loadCart()} />
         </div>
     );
 };

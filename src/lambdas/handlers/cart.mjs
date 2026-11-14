@@ -1,11 +1,12 @@
 import { randomUUID, createHash } from "node:crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, DeleteCommand, GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, BatchWriteCommand, DeleteCommand, GetCommand, PutCommand, QueryCommand, TransactWriteCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { generateCartSlug, getCartById } from "../utils/cart.mjs";
 import { getShopId, authorizeShopAccess } from "../utils/shop.mjs";
 import { getCartMetaBySlug } from "../utils/cart.mjs";
 import { jsonResponse } from "../utils/util.mjs";
 import { isDeviceId } from "../utils/device.mjs";
+import { priceCarts } from "../utils/pricing.mjs";
 
 const shopTableName = process.env.SHOPS_TABLE;
 const inventoryTableName = process.env.INVENTORY_TABLE;
@@ -50,7 +51,7 @@ export const listCarts = async (event) => {
             })
         );
 
-        return jsonResponse(200, carts);
+        return jsonResponse(200, await priceCarts(carts));
     } catch (error) {
         return jsonResponse(500, { message: "Failed to list carts" }, error);
     }
@@ -466,8 +467,9 @@ export const getDeviceCart = async (event) => {
                 }
 
                 const { tokenHash, ...safeCart } = cart;
+                const [pricedCart] = await priceCarts([safeCart]);
 
-                return jsonResponse(200, safeCart);
+                return jsonResponse(200, pricedCart);
             }
 
             lastEvaluatedKey = result.LastEvaluatedKey;
@@ -476,5 +478,179 @@ export const getDeviceCart = async (event) => {
         return jsonResponse(200, null);
     } catch (error) {
         return jsonResponse(500, { message: "Failed to retrieve the device's cart" }, error);
+    }
+};
+
+// Shared by the owner-only cart actions: authorizes the caller and loads the cart by slug.
+const loadOwnedCart = async (event) => {
+    const identifier = event.pathParameters?.identifier;
+    const slug = event.pathParameters?.cartSlug;
+
+    if (!identifier || !slug) {
+        return { errorResponse: jsonResponse(400, { message: "Shop identifier and cart slug are required." }) };
+    }
+
+    const { shop, errorResponse } = await authorizeShopAccess(event, identifier);
+
+    if (errorResponse) {
+        return { errorResponse };
+    }
+
+    const meta = await getCartMetaBySlug(shop.shopId, slug);
+    const cart = meta && await getCartById(meta.cartId);
+
+    if (!cart) {
+        return { errorResponse: jsonResponse(404, { message: "Cart not found." }) };
+    }
+
+    return { shop, cart };
+};
+
+const chunk = (array, size) => {
+    const chunks = [];
+
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+
+    return chunks;
+};
+
+export const clearCart = async (event) => {
+    try {
+        const { cart, errorResponse } = await loadOwnedCart(event);
+
+        if (errorResponse) {
+            return errorResponse;
+        }
+
+        for (const batch of chunk(cart.items, 25)) {
+            let requests = {
+                [cartTableName]: batch.map((item) => ({
+                    DeleteRequest: { Key: { cartId: cart.cartId, itemKey: item.itemKey } }
+                }))
+            };
+
+            for (let attempt = 0; requests && Object.keys(requests).length > 0; attempt++) {
+                if (attempt > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** attempt));
+                }
+
+                if (attempt > 5) {
+                    throw new Error("Unable to delete all cart items.");
+                }
+
+                const result = await documentClient.send(new BatchWriteCommand({ RequestItems: requests }));
+                requests = result.UnprocessedItems;
+            }
+        }
+
+        return jsonResponse(200, {
+            cartId: cart.cartId,
+            slug: cart.slug,
+            cleared: cart.items.length
+        });
+    } catch (error) {
+        return jsonResponse(500, { message: "Failed to clear cart" }, error);
+    }
+};
+
+// Each cart line needs two transaction actions (inventory decrement + cart item
+// delete), so 50 lines keeps every transaction within DynamoDB's 100-action limit.
+const PROCESS_BATCH_SIZE = 50;
+
+export const processCart = async (event) => {
+    try {
+        const { shop, cart, errorResponse } = await loadOwnedCart(event);
+
+        if (errorResponse) {
+            return errorResponse;
+        }
+
+        if (cart.items.length === 0) {
+            return jsonResponse(400, { message: "Cart is empty." });
+        }
+
+        const processed = [];
+
+        for (const batch of chunk(cart.items, PROCESS_BATCH_SIZE)) {
+            try {
+                await documentClient.send(new TransactWriteCommand({
+                    TransactItems: batch.flatMap((item) => [
+                        {
+                            Update: {
+                                TableName: inventoryTableName,
+                                Key: { shopId: shop.shopId, inventoryId: item.inventoryId },
+                                UpdateExpression: "SET #quantity = #quantity - :quantity",
+                                ConditionExpression: "attribute_exists(inventoryId) AND #quantity >= :quantity",
+                                ExpressionAttributeNames: { "#quantity": "quantity" },
+                                ExpressionAttributeValues: { ":quantity": item.quantity }
+                            }
+                        },
+                        {
+                            Delete: {
+                                TableName: cartTableName,
+                                Key: { cartId: cart.cartId, itemKey: item.itemKey },
+                                ConditionExpression: "attribute_exists(itemKey)"
+                            }
+                        }
+                    ])
+                }));
+            } catch (error) {
+                if (error.name !== "TransactionCanceledException") {
+                    throw error;
+                }
+
+                const failedIndex = (error.CancellationReasons ?? [])
+                    .findIndex((reason) => reason?.Code === "ConditionalCheckFailed");
+                const failedItem = failedIndex >= 0 ? batch[Math.floor(failedIndex / 2)] : null;
+                const cartChanged = failedIndex >= 0 && failedIndex % 2 === 1;
+
+                let message = "The cart could not be processed. Please try again.";
+
+                if (cartChanged) {
+                    message = "This cart changed while it was being processed. Refresh and try again.";
+                } else if (failedItem) {
+                    message = `Not enough "${failedItem.name}" (${failedItem.finish}) in inventory to process this cart.`;
+                }
+
+                return jsonResponse(409, {
+                    message,
+                    inventoryId: failedItem?.inventoryId ?? null,
+                    processed
+                });
+            }
+
+            processed.push(...batch.map((item) => item.inventoryId));
+        }
+
+        // Remove inventory rows that are now sold out.
+        const removedFromInventory = [];
+
+        await Promise.all([...new Set(processed)].map(async (inventoryId) => {
+            try {
+                await documentClient.send(new DeleteCommand({
+                    TableName: inventoryTableName,
+                    Key: { shopId: shop.shopId, inventoryId },
+                    ConditionExpression: "#quantity <= :zero",
+                    ExpressionAttributeNames: { "#quantity": "quantity" },
+                    ExpressionAttributeValues: { ":zero": 0 }
+                }));
+                removedFromInventory.push(inventoryId);
+            } catch (error) {
+                if (error.name !== "ConditionalCheckFailedException") {
+                    throw error;
+                }
+            }
+        }));
+
+        return jsonResponse(200, {
+            cartId: cart.cartId,
+            slug: cart.slug,
+            processed,
+            removedFromInventory
+        });
+    } catch (error) {
+        return jsonResponse(500, { message: "Failed to process cart" }, error);
     }
 };
