@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useOutletContext, useParams } from 'react-router-dom';
-import { getDeviceCart, getRegisteredDevices, removeDevice } from '../../api/lol/lol-owner-client';
-import CartItemsTable from '../../component/CartItemsTable';
+import { getRegisteredDevices, removeDevice } from '../../api/lol/lol-owner-client';
 import ManaLoader from '../../component/ManaLoader';
-import OwnerCartActions from '../../component/OwnerCartActions';
 import TrashIcon from '../../component/TrashIcon';
 
 const formatTimestamp = (epochSeconds) => {
@@ -14,67 +12,10 @@ const formatTimestamp = (epochSeconds) => {
     return new Date(epochSeconds * 1000).toLocaleString();
 };
 
-const DeviceCart = ({ shopId, deviceId }) => {
-    const [state, setState] = useState({ loading: true });
-
-    const loadCart = useCallback(async (isCancelled = () => false) => {
-        try {
-            const cart = await getDeviceCart(shopId, deviceId);
-
-            if (!isCancelled()) {
-                setState({ loading: false, cart });
-            }
-        } catch (err) {
-            console.error(err);
-
-            if (!isCancelled()) {
-                setState({ loading: false, error: err.message });
-            }
-        }
-    }, [shopId, deviceId]);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        loadCart(() => cancelled);
-
-        return () => {
-            cancelled = true;
-        };
-    }, [loadCart]);
-
-    if (state.loading) {
-        return <ManaLoader />;
-    }
-
-    if (state.error) {
-        return <div style={{ color: 'red' }}>{state.error}</div>;
-    }
-
-    if (!state.cart) {
-        return <div className="device-cart-empty">No active cart for this device.</div>;
-    }
-
-    const { cart } = state;
-
-    return (
-        <div className="device-cart">
-            <div className="device-cart-meta">
-                <span>Cart <strong>{cart.slug}</strong></span>
-                <span>Created: {formatTimestamp(cart.createdAt)}</span>
-                <span>Expires: {formatTimestamp(cart.expiresAt)}</span>
-            </div>
-            <CartItemsTable items={cart.items} total={cart.total} showPrices />
-            <OwnerCartActions shopId={shopId} cart={cart} onChanged={() => loadCart()} />
-        </div>
-    );
-};
-
 const ShopDevices = () => {
     const [devices, setDevices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedDeviceId, setSelectedDeviceId] = useState(null);
     const [removingDeviceId, setRemovingDeviceId] = useState(null);
 
     const { shopId } = useParams();
@@ -110,10 +51,6 @@ const ShopDevices = () => {
         try {
             await removeDevice(shopId, device.deviceId);
 
-            if (selectedDeviceId === device.deviceId) {
-                setSelectedDeviceId(null);
-            }
-
             await loadDevices();
         } catch (err) {
             console.error(err);
@@ -121,10 +58,6 @@ const ShopDevices = () => {
         } finally {
             setRemovingDeviceId(null);
         }
-    };
-
-    const toggleDevice = (deviceId) => {
-        setSelectedDeviceId((current) => (current === deviceId ? null : deviceId));
     };
 
     if (loading) {
@@ -139,37 +72,26 @@ const ShopDevices = () => {
                 ? <div>No devices are registered to {shop?.name ?? 'this shop'} yet.</div>
                 : (
                     <ul className="device-list">
-                        {devices.map((device) => {
-                            const expanded = selectedDeviceId === device.deviceId;
-
-                            return (
-                                <li key={device.deviceId} className={`device-item${expanded ? ' expanded' : ''}`}>
-                                    <div className="device-row">
-                                        <button
-                                            type="button"
-                                            className="device-toggle"
-                                            aria-expanded={expanded}
-                                            onClick={() => toggleDevice(device.deviceId)}
-                                        >
-                                            <span className="device-caret" aria-hidden="true">{expanded ? '▾' : '▸'}</span>
-                                            <span className="device-name">{device.name ?? 'Unnamed device'}</span>
-                                            <span className="device-date">Registered {formatTimestamp(device.createdAt)}</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="icon-button"
-                                            title="Remove device"
-                                            aria-label={`Remove ${device.name ?? 'device'}`}
-                                            disabled={removingDeviceId === device.deviceId}
-                                            onClick={() => onRemove(device)}
-                                        >
-                                            <TrashIcon />
-                                        </button>
+                        {devices.map((device) => (
+                            <li key={device.deviceId} className="device-item">
+                                <div className="device-row">
+                                    <div className="device-info">
+                                        <span className="device-name">{device.name ?? 'Unnamed device'}</span>
+                                        <span className="device-date">Registered {formatTimestamp(device.createdAt)}</span>
                                     </div>
-                                    {expanded && <DeviceCart shopId={shopId} deviceId={device.deviceId} />}
-                                </li>
-                            );
-                        })}
+                                    <button
+                                        type="button"
+                                        className="icon-button"
+                                        title="Remove device"
+                                        aria-label={`Remove ${device.name ?? 'device'}`}
+                                        disabled={removingDeviceId === device.deviceId}
+                                        onClick={() => onRemove(device)}
+                                    >
+                                        <TrashIcon />
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
                     </ul>
                 )}
         </div>

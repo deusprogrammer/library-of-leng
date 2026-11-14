@@ -362,7 +362,7 @@ button.button-danger:disabled {
   padding-right: 0.5rem;
 }
 
-.device-toggle {
+.device-info {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -370,15 +370,26 @@ button.button-danger:disabled {
   align-items: baseline;
   gap: 0.25rem 0.75rem;
   padding: 0.75rem 1rem;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  border-radius: 0;
 }
 
-.device-toggle:hover { background: rgba(226, 185, 111, 0.08); }
+.shop-devices-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
 
-.device-caret { color: #e2b96f; width: 1em; }
+.device-cart-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.device-cart-total { color: #e2b96f; font-weight: 700; }
 
 .device-name { font-weight: 700; }
 
