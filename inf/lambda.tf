@@ -68,6 +68,77 @@ locals {
       }
     }
 
+    register_device = {
+      handler   = "index.registerDevice"
+      route_key = "POST /shops/{identifier}/devices"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:DeleteItem"
+          ]
+        }
+      }
+    }
+
+    create_registration_invite = {
+      handler   = "index.createRegistrationInvite"
+      route_key = "POST /shops/{identifier}/registrations"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:PutItem"
+          ]
+        }
+      }
+    }
+
+    get_registered_devices = {
+      handler   = "index.getRegisteredDevices"
+      route_key = "GET /shops/{identifier}/devices"
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
     add_inventory = {
       handler   = "index.addInventory"
       route_key = "POST /shops/{identifier}/inventory"

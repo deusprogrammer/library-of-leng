@@ -39,6 +39,29 @@ resource "aws_dynamodb_table" "shops" {
   }
 }
 
+resource "aws_dynamodb_table" "registered_devices" {
+  name         = "registered_devices"
+  billing_mode = "PAY_PER_REQUEST"
+
+  hash_key  = "shopId"
+  range_key = "itemKey"
+
+  attribute {
+    name = "shopId"
+    type = "S"
+  }
+
+  attribute {
+    name = "itemKey"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "expiresAt"
+    enabled        = true
+  }
+}
+
 resource "aws_dynamodb_table" "carts" {
   name         = "carts"
   billing_mode = "PAY_PER_REQUEST"
