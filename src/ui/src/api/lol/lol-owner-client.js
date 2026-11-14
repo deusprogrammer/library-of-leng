@@ -95,3 +95,19 @@ export const getRegisteredDevices = async (shopId) => {
 
     return asJson(response, "Failed to retrieve registered devices");
 };
+
+export const removeDevice = async (shopId, deviceId) => {
+    const response = await authFetch(`${API_URL}shops/${encodeURIComponent(shopId)}/devices/${encodeURIComponent(deviceId)}`, {
+        method: "DELETE"
+    });
+
+    return asJson(response, "Failed to remove device");
+};
+
+export const getDeviceCart = async (shopId, deviceId) => {
+    const response = await authFetch(`${API_URL}shops/${encodeURIComponent(shopId)}/devices/${encodeURIComponent(deviceId)}/cart`, {
+        method: "GET"
+    });
+
+    return asJson(response, "Failed to retrieve device cart");
+};

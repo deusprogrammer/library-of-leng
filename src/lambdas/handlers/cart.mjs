@@ -5,6 +5,7 @@ import { generateCartSlug, getCartById } from "../utils/cart.mjs";
 import { getShopId, authorizeShopAccess } from "../utils/shop.mjs";
 import { getCartMetaBySlug } from "../utils/cart.mjs";
 import { jsonResponse } from "../utils/util.mjs";
+import { isDeviceId } from "../utils/device.mjs";
 
 const shopTableName = process.env.SHOPS_TABLE;
 const inventoryTableName = process.env.INVENTORY_TABLE;
@@ -386,13 +387,16 @@ export const createCart = async (event) => {
 
         const tokenHash = hashString(token);
 
+        const deviceId = event.device?.deviceId;
+
         const item = {
             shopId,
             cartId,
             slug,
             itemKey: "META",
             createdAt,
-            expiresAt
+            expiresAt,
+            ...(deviceId ? { deviceId } : {})
         };
 
         await documentClient.send(
@@ -417,5 +421,60 @@ export const createCart = async (event) => {
             { message: "Unable to create cart." },
             error
         );
+    }
+};
+
+export const getDeviceCart = async (event) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const deviceId = event.pathParameters?.deviceId;
+
+        if (!identifier || !isDeviceId(deviceId)) {
+            return jsonResponse(400, {
+                message: "Shop identifier and a valid device id are required."
+            });
+        }
+
+        const { shop, errorResponse } = await authorizeShopAccess(event, identifier);
+
+        if (errorResponse) {
+            return errorResponse;
+        }
+
+        // Newest first; skip any expired-but-not-yet-reaped carts.
+        const now = Math.floor(Date.now() / 1000);
+        let lastEvaluatedKey;
+
+        do {
+            const result = await documentClient.send(new QueryCommand({
+                TableName: cartTableName,
+                IndexName: "cart-by-device",
+                KeyConditionExpression: "deviceId = :deviceId",
+                ExpressionAttributeValues: {
+                    ":deviceId": deviceId
+                },
+                ScanIndexForward: false,
+                Limit: 10,
+                ExclusiveStartKey: lastEvaluatedKey
+            }));
+
+            for (const key of result.Items ?? []) {
+                const cart = await getCartById(key.cartId);
+
+                if (!cart || cart.shopId !== shop.shopId || (cart.expiresAt ?? Infinity) <= now) {
+                    continue;
+                }
+
+                const { tokenHash, ...safeCart } = cart;
+
+                return jsonResponse(200, safeCart);
+            }
+
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+
+        return jsonResponse(200, null);
+    } catch (error) {
+        return jsonResponse(500, { message: "Failed to retrieve the device's cart" }, error);
     }
 };

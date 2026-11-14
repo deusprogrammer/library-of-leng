@@ -15,6 +15,7 @@ import ManageInventory from './routes/owner/ManageInventory'
 import ShopCarts from './routes/owner/ShopCarts'
 import CsvUpload from './routes/owner/CsvUpload'
 import RegisterDevice from './routes/owner/RegisterDevice'
+import ShopDevices from './routes/owner/ShopDevices'
 import DeviceRegistration from './routes/DeviceRegistration'
 import { DeviceForbiddenRedirect, Forbidden } from './routes/Forbidden'
 import RequireOwner from './component/RequireOwner'
@@ -46,6 +47,7 @@ export default function App() {
           <Route index element={<ManageInventory />} />
           <Route path="carts" element={<ShopCarts />} />
           <Route path="upload" element={<CsvUpload />} />
+          <Route path="devices" element={<ShopDevices />} />
           <Route path="devices/register" element={<RegisterDevice />} />
         </Route>
         <Route path="/register/:shopId" element={<DeviceRegistration />} />

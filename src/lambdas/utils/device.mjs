@@ -19,6 +19,15 @@ const hashString = (value) =>
         .update(value)
         .digest("hex");
 
+export const DEVICE_PREFIX = "REGISTRATION#";
+
+// A device's public id is the hash in its key, never the secret itself.
+export const toDeviceId = (itemKey) =>
+    itemKey?.startsWith(DEVICE_PREFIX) ? itemKey.slice(DEVICE_PREFIX.length) : null;
+
+export const isDeviceId = (value) =>
+    typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+
 export const authorizeDeviceAccess = async (event, identifier) => {
     try {
         if (!identifier) {
@@ -58,7 +67,7 @@ export const authorizeDeviceAccess = async (event, identifier) => {
         }
 
         const itemKey =
-            "REGISTRATION#" + hashString(registrationKey);
+            DEVICE_PREFIX + hashString(registrationKey);
 
         const result = await documentClient.send(
             new GetCommand({
@@ -84,6 +93,7 @@ export const authorizeDeviceAccess = async (event, identifier) => {
         return {
             device: {
                 shopId: device.shopId,
+                deviceId: toDeviceId(device.itemKey),
                 itemKey: device.itemKey,
                 name: device.name ?? null,
                 createdAt: device.createdAt
@@ -105,14 +115,15 @@ export const authorizeDeviceAccess = async (event, identifier) => {
 /**
  * Wraps a shop-scoped handler so it only runs for requests carrying a valid
  * device registration key for the shop in the {identifier} path parameter.
+ * The authorized device is passed to the handler as `event.device`.
  */
 export const withDeviceAccess = (handler) => async (event, context) => {
-    const { errorResponse } = await authorizeDeviceAccess(
+    const { device, errorResponse } = await authorizeDeviceAccess(
         event,
         event.pathParameters?.identifier
     );
 
     if (errorResponse) return errorResponse;
 
-    return handler(event, context);
+    return handler({ ...event, device }, context);
 };

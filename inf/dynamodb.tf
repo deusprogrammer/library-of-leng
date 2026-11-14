@@ -88,6 +88,16 @@ resource "aws_dynamodb_table" "carts" {
     type = "S"
   }
 
+  attribute {
+    name = "deviceId"
+    type = "S"
+  }
+
+  attribute {
+    name = "createdAt"
+    type = "N"
+  }
+
   ttl {
     attribute_name = "expiresAt"
     enabled        = true
@@ -104,6 +114,22 @@ resource "aws_dynamodb_table" "carts" {
 
     key_schema {
       attribute_name = "slug"
+      key_type       = "RANGE"
+    }
+  }
+
+  # Sparse index: only cart META records stamped with a deviceId appear here.
+  global_secondary_index {
+    name            = "cart-by-device"
+    projection_type = "KEYS_ONLY"
+
+    key_schema {
+      attribute_name = "deviceId"
+      key_type       = "HASH"
+    }
+
+    key_schema {
+      attribute_name = "createdAt"
       key_type       = "RANGE"
     }
   }

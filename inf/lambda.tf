@@ -177,6 +177,54 @@ locals {
       }
     }
 
+    remove_device = {
+      handler   = "index.removeDevice"
+      route_key = "DELETE /shops/{identifier}/devices/{deviceId}"
+      protected = true
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        DEVICES_TABLE = {
+          name = aws_dynamodb_table.registered_devices.name
+          arn  = aws_dynamodb_table.registered_devices.arn
+          actions = [
+            "dynamodb:DeleteItem"
+          ]
+        }
+      }
+    }
+
+    get_device_cart = {
+      handler   = "index.getDeviceCart"
+      route_key = "GET /shops/{identifier}/devices/{deviceId}/cart"
+      protected = true
+
+      dynamodb_tables = {
+        SHOPS_TABLE = {
+          name = aws_dynamodb_table.shops.name
+          arn  = aws_dynamodb_table.shops.arn
+          actions = [
+            "dynamodb:GetItem",
+            "dynamodb:Query"
+          ]
+        }
+        CARTS_TABLE = {
+          name = aws_dynamodb_table.carts.name
+          arn  = aws_dynamodb_table.carts.arn
+          actions = [
+            "dynamodb:Query"
+          ]
+        }
+      }
+    }
+
     add_inventory = {
       handler   = "index.addInventory"
       route_key = "POST /shops/{identifier}/inventory"

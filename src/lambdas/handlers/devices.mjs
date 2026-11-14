@@ -5,12 +5,14 @@ import {
     QueryCommand,
     PutCommand,
     GetCommand,
+    DeleteCommand,
     TransactWriteCommand
 } from "@aws-sdk/lib-dynamodb";
 import { randomBytes, createHash } from "node:crypto";
 
 import { getShopId, authorizeShopAccess } from "../utils/shop.mjs";
 import { jsonResponse } from "../utils/util.mjs";
+import { DEVICE_PREFIX, isDeviceId, toDeviceId } from "../utils/device.mjs";
 
 const deviceTable = process.env.DEVICES_TABLE;
 
@@ -18,7 +20,6 @@ const client = new DynamoDBClient({});
 const documentClient = DynamoDBDocumentClient.from(client);
 
 const PAIRING_PREFIX = "PAIRING#";
-const DEVICE_PREFIX = "REGISTRATION#";
 const PAIRING_LIFETIME_SECONDS = 5 * 60;
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
@@ -261,6 +262,7 @@ export const getRegisteredDevices = async (event, context) => {
             registeredDevices.push(
                 ...(result.Items ?? []).map(item => ({
                     shopId: item.shopId,
+                    deviceId: toDeviceId(item.itemKey),
                     itemKey: item.itemKey,
                     name: item.name ?? null,
                     createdAt: item.createdAt,
@@ -278,6 +280,48 @@ export const getRegisteredDevices = async (event, context) => {
         return jsonResponse(
             500,
             { message: "Failed to list registered devices." },
+            error
+        );
+    }
+};
+
+export const removeDevice = async (event, context) => {
+    try {
+        const identifier = event.pathParameters?.identifier;
+        const deviceId = event.pathParameters?.deviceId;
+
+        if (!identifier || !isDeviceId(deviceId)) {
+            return jsonResponse(400, {
+                message: "Shop identifier and a valid device id are required."
+            });
+        }
+
+        const { shop, errorResponse } =
+            await authorizeShopAccess(event, identifier);
+
+        if (errorResponse) return errorResponse;
+
+        await documentClient.send(new DeleteCommand({
+            TableName: deviceTable,
+            Key: {
+                shopId: shop.shopId,
+                itemKey: DEVICE_PREFIX + deviceId
+            },
+            ConditionExpression: "attribute_exists(itemKey)"
+        }));
+
+        return jsonResponse(200, { deviceId, removed: true });
+
+    } catch (error) {
+        if (error.name === "ConditionalCheckFailedException") {
+            return jsonResponse(404, {
+                message: "Device not found."
+            });
+        }
+
+        return jsonResponse(
+            500,
+            { message: "Unable to remove device." },
             error
         );
     }

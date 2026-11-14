@@ -23,6 +23,7 @@ const ManageShop = () => {
                 <Link to={`/owner/shops/${shopId}`}>Inventory</Link>
                 <Link to={`/owner/shops/${shopId}/carts`}>Carts</Link>
                 <Link to={`/owner/shops/${shopId}/upload`}>CSV Upload</Link>
+                <Link to={`/owner/shops/${shopId}/devices`}>Devices</Link>
                 <Link to={`/shops/${shop.slug ?? shopId}`}>View Storefront</Link>
                 <Link className="owner-nav-button" to={`/owner/shops/${shopId}/devices/register`}>Register Device</Link>
             </div>

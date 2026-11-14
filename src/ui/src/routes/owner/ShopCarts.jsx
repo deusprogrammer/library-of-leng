@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { listShopCarts } from '../../api/lol/lol-owner-client';
 import ManaLoader from '../../component/ManaLoader';
+import CartItemsTable from '../../component/CartItemsTable';
 
 const formatTimestamp = (epochSeconds) => {
     if (!epochSeconds) {
@@ -51,32 +52,7 @@ const ShopCarts = () => {
                             <h3>{cart.slug}</h3>
                             <div>Created: {formatTimestamp(cart.createdAt)}</div>
                             <div>Expires: {formatTimestamp(cart.expiresAt)}</div>
-                            {cart.items.length === 0
-                                ? <div>Cart is empty.</div>
-                                : (
-                                    <div className="table-scroll">
-                                    <table style={{ borderCollapse: 'collapse', marginTop: '10px' }}>
-                                        <thead>
-                                            <tr>
-                                                <th style={{ textAlign: 'left', padding: '5px' }}>Name</th>
-                                                <th style={{ textAlign: 'left', padding: '5px' }}>Set</th>
-                                                <th style={{ textAlign: 'left', padding: '5px' }}>Finish</th>
-                                                <th style={{ textAlign: 'right', padding: '5px' }}>Quantity</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {cart.items.map((item) => (
-                                                <tr key={item.itemKey}>
-                                                    <td style={{ padding: '5px' }}>{item.name}</td>
-                                                    <td style={{ padding: '5px' }}>{item.setCode?.toUpperCase()}</td>
-                                                    <td style={{ padding: '5px' }}>{item.finish}</td>
-                                                    <td style={{ padding: '5px', textAlign: 'right' }}>{item.quantity}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                    </div>
-                                )}
+                            <CartItemsTable items={cart.items} />
                         </div>
                     ))}
         </div>

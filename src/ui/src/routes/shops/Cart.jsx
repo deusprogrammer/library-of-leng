@@ -5,20 +5,7 @@ import { cartAtom } from '../../atoms/CartAtom';
 import { getCart, getStoreCartMeta, removeFromCart } from '../../api/lol/lol-cart-client';
 import { getScryfallCollection } from '../../api/scryfall/scry-client';
 import ManaLoader from '../../component/ManaLoader';
-
-// Minimal inline trash-can icon so the component has no icon-library
-// dependency.
-const TrashIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-            d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0-.8 12.1a2 2 0 0 1-2 1.9H9.8a2 2 0 0 1-2-1.9L7 7h10Z"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
+import TrashIcon from '../../component/TrashIcon';
 
 const getPrice = (scryfallCard) => {
     if (!scryfallCard?.prices) {

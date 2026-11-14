@@ -122,7 +122,7 @@ const RegisterDevice = () => {
                 </p>
                 <div className="register-device-actions">
                     <button type="button" onClick={createInvite}>Register another device</button>
-                    <Link to={`/owner/shops/${shopId}`}>Back to inventory</Link>
+                    <Link to={`/owner/shops/${shopId}/devices`}>View devices</Link>
                 </div>
             </div>
         );
